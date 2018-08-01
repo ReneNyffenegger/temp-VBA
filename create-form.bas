@@ -1,11 +1,14 @@
-
 '
 '  https://stackoverflow.com/a/11541912/180275
 '
+option explicit
+
 sub CreateUserForm()
 
-  dim myForm    as object ' msForms.userForm
-  dim NewFrame  as MSForms.Frame
+' dim myForm     as object ' msForms.userForm
+  dim myForm     as VBIDE.VBComponent
+  dim myDesigner as msForms.userForm
+  dim NewFrame   as MSForms.Frame
 
   dim NewButton as MSForms.CommandButton
  'dim NewComboBox as MSForms.ComboBox
@@ -25,42 +28,44 @@ sub CreateUserForm()
   'Create the User Form
   with myForm
       .properties("Caption") = "New Form"
-      .properties("Width") = 300
-      .properties("Height") = 270
+      .properties("Width"  ) = 300
+      .properties("Height" ) = 270
   end with
   
   'Create ListBox
-  set NewListBox = myForm.Designer.Controls.add("Forms.listbox.1")
-  with NewListBox
-      .Name = "lst_1"
-      .Top = 10
-      .Left = 10
-      .Width = 150
-      .Height = 230
-      .Font.Size = 8
-      .Font.Name = "Tahoma"
-      .BorderStyle = fmBorderStyleOpaque
+  set myDesigner = myForm.designer
+' set NewListBox = myForm.Designer.Controls.add("Forms.listbox.1")
+  set NewListBox = myDesigner.Controls.add("Forms.listbox.1")
+  with newListBox
+      .Name          ="lst_1"
+      .Top           =  10
+      .Left          =  10
+      .Width         = 150
+      .Height        = 230
+      .Font.Size     =   8
+      .Font.Name     ="Tahoma"
+'     .BorderStyle   = fmBorderStyleOpaque
       .SpecialEffect = fmSpecialEffectSunken
   end with
   
   'Create CommandButton Create
-  set NewButton = myForm.Designer.Controls.add("Forms.commandbutton.1")
+' set NewButton = myForm.Designer.Controls.add("Forms.commandbutton.1")
+  set NewButton = myDesigner.Controls.add("Forms.commandbutton.1")
   with NewButton
-      .Name = "cmd_1"
-      .Caption = "clickMe"
-      .Accelerator = "M"
-
-      .Top       = 10
-      .Left      = 200
-      .Width     = 66
-      .Height    = 20
-      .Font.Size = 8
-      .Font.Name = "Tahoma"
-      .BackStyle = fmBackStyleOpaque
-  end with
+      .name         ="cmd_1"
+      .caption      ="clickMe"
+      .accelerator  ="M"
+      .top          =  10
+      .left         = 200
+      .width        =  66
+      .height       =  20
+      .font.Size    =   8
+      .font.Name    ="Tahoma"
+      .backStyle    = fmBackStyleOpaque
+  end  with
   
   'add code for listBox
-  lstBoxData = "Data 1,Data 2,Data 3,Data 4"
+' lstBoxData = "Data 1,Data 2,Data 3,Data 4"
   myForm.codeModule.InsertLines  1, "Private sub UserForm_Initialize()"
   myForm.codeModule.InsertLines  2, "   me.lst_1.addItem ""Data 1"" "
   myForm.codeModule.InsertLines  3, "   me.lst_1.addItem ""Data 2"" "
