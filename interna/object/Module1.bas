@@ -1,7 +1,6 @@
+option explicit
 
-Option Explicit
-
-Type GUID
+type GUID
    data1 As Long
    data2 As Integer
    data3 As Integer
@@ -49,12 +48,22 @@ sub main()
     debug.print "objPtr1(+   0)     = " & GetMem4_(objPtr1+0)
     debug.print "objPtr2(+   0)     = " & GetMem4_(objPtr2+0)
 
+    debug.print "objPtr1(+   4)     = " & GetMem4_(objPtr1+4)
+    debug.print "objPtr2(+   4)     = " & GetMem4_(objPtr2+4)
+
+    debug.print "0:                 = " & GetMem4_(GetMem4_(objPtr1+0) + 0)
     debug.print "0:                 = " & GetMem4_(GetMem4_(objPtr2+0) + 0)
+
+    debug.print "4:                 = " & GetMem4_(GetMem4_(objPtr1+0) + 4)
     debug.print "4:                 = " & GetMem4_(GetMem4_(objPtr2+0) + 4)
+
+    debug.print "8:                 = " & GetMem4_(GetMem4_(objPtr1+0) + 8)
     debug.print "8:                 = " & GetMem4_(GetMem4_(objPtr2+0) + 8)
 
 '   PutMem4 GetMem4_(objPtr2+0) + 0, vba.cLng(addressof addRef)
-    PutMem4 GetMem4_(objPtr2+0) + 4, vba.cLng(addressof addRef)
+
+'   PutMem4 GetMem4_(objPtr2+0) + 4, vba.cLng(addressof addRef)
+
     debug.print "0:                 = " & GetMem4_(GetMem4_(objPtr2+0) + 0)
 
     set o1 = o2
@@ -72,5 +81,3 @@ sub main()
     
 
 end sub
-
-
