@@ -2,10 +2,9 @@
 
 // typedef void (*fnptr)(void (*)());
 
+int vTableIsChanged = 0;
 
 void writeToFile(char* fmt, ...) {
-
-
 
   va_list args;
 
@@ -39,14 +38,53 @@ void writeToFile(char* fmt, ...) {
 
 }
 
-int main() {
+// int main() {
+// 
+//   writeToFile("The number is %d, the text is >%s<", 42, "Hello world");
+//   writeToFile("second line");
+// 
+// }
 
-  writeToFile("The number is %d, the text is >%s<", 42, "Hello world");
-  writeToFile("second line");
 
+long *vTable;
+typedef void (*funcPtr_void_void)(void);
+funcPtr_void_void  AddRefOrig;
+
+static __attribute__((stdcall)) void AddRef(void);
+
+__declspec(dllexport) __stdcall void ChangeVTable(long** addrObj) {
+
+  if (vTableIsChanged) {
+    writeToFile("setFuncPointersInVTable, vTable is already changed, returning");
+    vTableIsChanged = 1;
+    return;
+  }
+
+  writeToFile("setFuncPointersInVTable, addrObj = %p", addrObj);
+  vTable =  *addrObj;
+  writeToFile("setFuncPointersInVTable, vTable = %p", vTable);
+
+  AddRefOrig = (funcPtr_void_void)        vTable[1];
+  vTable[1]  = (long ) &AddRef;
+
+  vTableIsChanged = 1;
 }
 
 
-static __attribute__((stdcall)) AddRef(void* this) {
+static __attribute__((stdcall)) void AddRef(void) {
+
+
+//(*AddRefOrig)();
+
+//writeToFile("AddRef, this = %p", this);
+  asm (
+      "movl %%ebp, %%esp\n"
+      "popl %%ebp\n"
+//    "jmp _AddRefOrig;"
+      "pushl (_AddRefOrig)\n"
+      "ret\n"
+      :
+//    : "r" (AddRefOrig)
+  );
 
 }
