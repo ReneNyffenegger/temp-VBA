@@ -46,11 +46,24 @@ void writeToFile(char* fmt, ...) {
 // }
 
 
-long *vTable;
-typedef void (*funcPtr_void_void)(void);
-funcPtr_void_void  AddRefOrig;
+// long *vTable;
 
-static __attribute__((stdcall)) void AddRef(void);
+typedef __stdcall unsigned long (*funcPtr_IUnknown_AddRef)(void*);
+
+struct IUnkown_vTable {
+  void* todo              ;
+  funcPtr_IUnknown_AddRef AddRef;
+};
+
+struct IUnkown_vTable *vTable;
+
+
+typedef void (*funcPtr_void_void)(void);
+// funcPtr_void_void  AddRefOrig;
+funcPtr_IUnknown_AddRef AddRefOrig;
+
+// static __attribute__((stdcall)) void AddRef(void);
+__stdcall unsigned long AddRef(void* this);
 
 __declspec(dllexport) __stdcall void ChangeVTable(long** addrObj) {
 
@@ -61,17 +74,23 @@ __declspec(dllexport) __stdcall void ChangeVTable(long** addrObj) {
   }
 
   writeToFile("setFuncPointersInVTable, addrObj = %p", addrObj);
-  vTable =  *addrObj;
+  vTable =  (struct IUnkown_vTable*) *addrObj;
   writeToFile("setFuncPointersInVTable, vTable = %p", vTable);
 
-  AddRefOrig = (funcPtr_void_void)        vTable[1];
-  vTable[1]  = (long ) &AddRef;
+//AddRefOrig = (funcPtr_void_void)        vTable[1];
+//AddRefOrig =                            vTable[1];
+  AddRefOrig =                            vTable->AddRef;
+
+
+//vTable[1]  = (long ) &AddRef;
+  vTable->AddRef = &AddRef;
 
   vTableIsChanged = 1;
 }
 
 
-static __attribute__((stdcall)) void AddRef(void) {
+// static __attribute__((stdcall)) void AddRef(void) {
+__stdcall unsigned long AddRef(void* this) {
 
 
 //(*AddRefOrig)();
