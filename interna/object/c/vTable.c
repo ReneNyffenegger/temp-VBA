@@ -26,6 +26,18 @@
       : /* "r" (AddRefOrig)   */                                      \
   );
 
+//
+// https://gist.github.com/tfzxyinhao/2818b31a7ce94154a133
+//
+char* unicode2ascii(const wchar_t* wszString) {
+
+	int outlen = WideCharToMultiByte(CP_ACP, 0, wszString, wcslen(wszString), NULL, 0, NULL, NULL);
+	char* utf8 = malloc(outlen + 1);
+	WideCharToMultiByte(CP_ACP, 0, wszString, wcslen(wszString), utf8, outlen, NULL, NULL);
+	utf8[outlen] = '\0';
+	return utf8;
+}
+
 int vTableIsChanged = 0;
 
 void writeToFile(char* fmt, ...) {
@@ -98,14 +110,14 @@ __stdcall HRESULT Release       (void* this);
 __declspec(dllexport) __stdcall void ChangeVTable(long** addrObj) {
 
   if (vTableIsChanged) {
-    writeToFile("setFuncPointersInVTable, vTable is already changed, returning");
+    writeToFile("ChangeVTable, vTable is already changed, returning");
     vTableIsChanged = 1;
     return;
   }
 
-  writeToFile("setFuncPointersInVTable, addrObj = %p", addrObj);
+  writeToFile("ChangeVTable, addrObj = %p", addrObj);
   vTable =  (struct IUnkown_vTable*) *addrObj;
-  writeToFile("setFuncPointersInVTable, vTable = %p", vTable);
+  writeToFile("ChangeVTable, vTable = %p", vTable);
 
 //AddRefOrig = (funcPtr_void_void)        vTable[1];
 //AddRefOrig =                            vTable[1];
@@ -122,11 +134,16 @@ __declspec(dllexport) __stdcall void ChangeVTable(long** addrObj) {
   vTableIsChanged = 1;
 }
 
-__stdcall HRESULT QueryInterface(void* this, const IID* iid, void** ppv) {
+__stdcall HRESULT QueryInterface(void* this, const REFIID iid, void** ppv) {
 
   PUSH_REGISTERS
 
-  writeToFile("QueryInterface, this = %p");
+  wchar_t* str;
+  StringFromIID(iid, &str);
+
+  writeToFile("QueryInterface, this = %p, iid = %s", this, unicode2ascii(str));
+//writeToFile("QueryInterface, this = %p, iid =   ", this                    );
+
 
   POP_REGISTERS
 
