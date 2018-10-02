@@ -14,6 +14,18 @@
        "popl %ebx\n"    \
        "popl %eax\n");
 
+#define JMP_TO_FUNCTION(function)                                     \
+  asm (                                                               \
+      "movl %%ebp, %%esp\n"    /* Undo initialization of   */         \
+      "popl %%ebp\n"           /* stackframe.              */         \
+   /* ----------------------------------------------       */         \
+/*    "pushl (_AddRefOrig)\n"  -- Jump to original address */         \
+/*    "ret\n"                  --                          */         \
+      "jmpl *_" #function "\n" /* Jump to original address */         \
+      :                                                               \
+      : /* "r" (AddRefOrig)   */                                      \
+  );
+
 int vTableIsChanged = 0;
 
 void writeToFile(char* fmt, ...) {
@@ -118,16 +130,18 @@ __stdcall HRESULT QueryInterface(void* this, const IID* iid, void** ppv) {
 
   POP_REGISTERS
 
-  asm (
-      "movl %%ebp, %%esp\n"    // Undo initialization of
-      "popl %%ebp\n"           // stackframe.
-   // ----------------------------------------------
-//    "pushl (_AddRefOrig)\n"  // Jump to original address
-//    "ret\n"                  //
-      "jmpl *_QueryInterfaceOrig\n"    // Jump to original address
-      :
-//    : "r" (AddRefOrig)
-  );
+  JMP_TO_FUNCTION(QueryInterfaceOrig)
+
+//   asm (
+//       "movl %%ebp, %%esp\n"    // Undo initialization of
+//       "popl %%ebp\n"           // stackframe.
+//    // ----------------------------------------------
+// //    "pushl (_AddRefOrig)\n"  // Jump to original address
+// //    "ret\n"                  //
+//       "jmpl *_QueryInterfaceOrig\n"    // Jump to original address
+//       :
+// //    : "r" (AddRefOrig)
+//   );
 
 }
 
@@ -139,20 +153,18 @@ __stdcall HRESULT AddRef(void* this) {
 
   POP_REGISTERS
 
+  JMP_TO_FUNCTION(AddRefOrig)
 
-//(*AddRefOrig)();
-
-//writeToFile("AddRef, this = %p", this);
-  asm (
-      "movl %%ebp, %%esp\n"    // Undo initialization of
-      "popl %%ebp\n"           // stackframe.
-   // ----------------------------------------------
-//    "pushl (_AddRefOrig)\n"  // Jump to original address
-//    "ret\n"                  //
-      "jmpl *_AddRefOrig\n"    // Jump to original address
-      :
-//    : "r" (AddRefOrig)
-  );
+//   asm (
+//       "movl %%ebp, %%esp\n"    // Undo initialization of
+//       "popl %%ebp\n"           // stackframe.
+//    // ----------------------------------------------
+// //    "pushl (_AddRefOrig)\n"  // Jump to original address
+// //    "ret\n"                  //
+//       "jmpl *_AddRefOrig\n"    // Jump to original address
+//       :
+// //    : "r" (AddRefOrig)
+//   );
 
 }
 
@@ -164,16 +176,17 @@ __stdcall HRESULT Release(void* this) {
 
   POP_REGISTERS
 
+  JMP_TO_FUNCTION(ReleaseOrig)
 
-  asm (
-      "movl %%ebp, %%esp\n"    // Undo initialization of
-      "popl %%ebp\n"           // stackframe.
-   // ----------------------------------------------
-//    "pushl (_AddRefOrig)\n"  // Jump to original address
-//    "ret\n"                  //
-      "jmpl *_ReleaseOrig\n"   // Jump to original address
-      :
-//    : "r" (AddRefOrig)
-  );
+//  asm (
+//      "movl %%ebp, %%esp\n"    // Undo initialization of
+//      "popl %%ebp\n"           // stackframe.
+//   // ----------------------------------------------
+////    "pushl (_AddRefOrig)\n"  // Jump to original address
+////    "ret\n"                  //
+//      "jmpl *_ReleaseOrig\n"   // Jump to original address
+//      :
+////    : "r" (AddRefOrig)
+//  );
 
 }
