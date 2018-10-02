@@ -78,11 +78,12 @@ static __attribute__((stdcall)) void AddRef(void) {
 
 //writeToFile("AddRef, this = %p", this);
   asm (
-      "movl %%ebp, %%esp\n"
-      "popl %%ebp\n"
-//    "jmp _AddRefOrig;"
-      "pushl (_AddRefOrig)\n"
-      "ret\n"
+      "movl %%ebp, %%esp\n"    // Undo initialization of
+      "popl %%ebp\n"           // stackframe.
+   // ----------------------------------------------
+//    "pushl (_AddRefOrig)\n"  // Jump to original address
+//    "ret\n"                  //
+      "jmpl *_AddRefOrig\n"    // Jump to original address
       :
 //    : "r" (AddRefOrig)
   );
