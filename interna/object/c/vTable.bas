@@ -16,4 +16,7 @@ sub main() ' {
 
    set o2 = o1
 
+   set o1 = nothing
+   set o2 = nothing
+
 end sub ' }

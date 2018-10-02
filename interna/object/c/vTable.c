@@ -2,6 +2,18 @@
 
 // typedef void (*fnptr)(void (*)());
 
+#define PUSH_REGISTERS  \
+  asm ("pushl %eax\n"   \
+       "pushl %ebx\n"   \
+       "pushl %ecx\n"   \
+       "pushl %edx\n");
+
+#define POP_REGISTERS   \
+  asm ("popl %edx\n"    \
+       "popl %ecx\n"    \
+       "popl %ebx\n"    \
+       "popl %eax\n");
+
 int vTableIsChanged = 0;
 
 void writeToFile(char* fmt, ...) {
@@ -48,22 +60,28 @@ void writeToFile(char* fmt, ...) {
 
 // long *vTable;
 
-typedef __stdcall unsigned long (*funcPtr_IUnknown_AddRef)(void*);
+typedef __stdcall HRESULT (*funcPtr_IUnknown_QueryInterface)(void*, const IID*, void**);
+typedef __stdcall HRESULT (*funcPtr_IUnknown_AddRef        )(void*);
+typedef __stdcall HRESULT (*funcPtr_IUnknown_Release       )(void*);
 
 struct IUnkown_vTable {
-  void* todo              ;
-  funcPtr_IUnknown_AddRef AddRef;
+  funcPtr_IUnknown_QueryInterface  QueryInterface;
+  funcPtr_IUnknown_AddRef          AddRef;
+  funcPtr_IUnknown_Release         Release;
 };
 
 struct IUnkown_vTable *vTable;
 
 
-typedef void (*funcPtr_void_void)(void);
+//typedef void (*funcPtr_void_void)(void);
 // funcPtr_void_void  AddRefOrig;
-funcPtr_IUnknown_AddRef AddRefOrig;
+funcPtr_IUnknown_QueryInterface QueryInterfaceOrig;;
+funcPtr_IUnknown_AddRef         AddRefOrig;
+funcPtr_IUnknown_Release        ReleaseOrig;
 
-// static __attribute__((stdcall)) void AddRef(void);
-__stdcall unsigned long AddRef(void* this);
+__stdcall HRESULT QueryInterface(void* this, const IID* iid, void** ppv);
+__stdcall HRESULT AddRef        (void* this);
+__stdcall HRESULT Release       (void* this);
 
 __declspec(dllexport) __stdcall void ChangeVTable(long** addrObj) {
 
@@ -79,30 +97,48 @@ __declspec(dllexport) __stdcall void ChangeVTable(long** addrObj) {
 
 //AddRefOrig = (funcPtr_void_void)        vTable[1];
 //AddRefOrig =                            vTable[1];
-  AddRefOrig =                            vTable->AddRef;
+  QueryInterfaceOrig =                    vTable->QueryInterface;
+  AddRefOrig         =                    vTable->AddRef;
+  ReleaseOrig        =                    vTable->Release;
 
 
 //vTable[1]  = (long ) &AddRef;
-  vTable->AddRef = &AddRef;
+  vTable->QueryInterface = &QueryInterface;
+  vTable->AddRef         = &AddRef;
+  vTable->Release        = &Release;
 
   vTableIsChanged = 1;
 }
 
+__stdcall HRESULT QueryInterface(void* this, const IID* iid, void** ppv) {
 
-// static __attribute__((stdcall)) void AddRef(void) {
-__stdcall unsigned long AddRef(void* this) {
+  PUSH_REGISTERS
 
-  asm ("pushl %eax\n"
-       "pushl %ebx\n"
-       "pushl %ecx\n"
-       "pushl %edx\n");
+  writeToFile("QueryInterface, this = %p");
 
-   writeToFile("AddRef, this = %p");
+  POP_REGISTERS
 
-  asm ("popl %edx\n"
-       "popl %ecx\n"
-       "popl %ebx\n"
-       "popl %eax\n");
+  asm (
+      "movl %%ebp, %%esp\n"    // Undo initialization of
+      "popl %%ebp\n"           // stackframe.
+   // ----------------------------------------------
+//    "pushl (_AddRefOrig)\n"  // Jump to original address
+//    "ret\n"                  //
+      "jmpl *_QueryInterfaceOrig\n"    // Jump to original address
+      :
+//    : "r" (AddRefOrig)
+  );
+
+}
+
+__stdcall HRESULT AddRef(void* this) {
+
+  PUSH_REGISTERS
+
+  writeToFile("AddRef, this = %p");
+
+  POP_REGISTERS
+
 
 //(*AddRefOrig)();
 
@@ -114,6 +150,28 @@ __stdcall unsigned long AddRef(void* this) {
 //    "pushl (_AddRefOrig)\n"  // Jump to original address
 //    "ret\n"                  //
       "jmpl *_AddRefOrig\n"    // Jump to original address
+      :
+//    : "r" (AddRefOrig)
+  );
+
+}
+
+__stdcall HRESULT Release(void* this) {
+
+  PUSH_REGISTERS
+
+  writeToFile("Release, this = %p");
+
+  POP_REGISTERS
+
+
+  asm (
+      "movl %%ebp, %%esp\n"    // Undo initialization of
+      "popl %%ebp\n"           // stackframe.
+   // ----------------------------------------------
+//    "pushl (_AddRefOrig)\n"  // Jump to original address
+//    "ret\n"                  //
+      "jmpl *_ReleaseOrig\n"   // Jump to original address
       :
 //    : "r" (AddRefOrig)
   );
