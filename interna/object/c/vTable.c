@@ -92,6 +92,17 @@ __declspec(dllexport) __stdcall void ChangeVTable(long** addrObj) {
 // static __attribute__((stdcall)) void AddRef(void) {
 __stdcall unsigned long AddRef(void* this) {
 
+  asm ("pushl %eax\n"
+       "pushl %ebx\n"
+       "pushl %ecx\n"
+       "pushl %edx\n");
+
+   writeToFile("AddRef, this = %p");
+
+  asm ("popl %edx\n"
+       "popl %ecx\n"
+       "popl %ebx\n"
+       "popl %eax\n");
 
 //(*AddRefOrig)();
 
