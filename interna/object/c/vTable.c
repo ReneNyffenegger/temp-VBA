@@ -141,7 +141,12 @@ __stdcall HRESULT QueryInterface(void* this, const REFIID iid, void** ppv) {
   wchar_t* str;
   StringFromIID(iid, &str);
 
-  writeToFile("QueryInterface, this = %p, iid = %s", this, unicode2ascii(str));
+  char* strIID = unicode2ascii(str);
+  writeToFile("QueryInterface, this = %p, iid = %s", this, strIID);
+  free(strIID);
+  CoTaskMemFree(str);
+
+
 //writeToFile("QueryInterface, this = %p, iid =   ", this                    );
 
 
