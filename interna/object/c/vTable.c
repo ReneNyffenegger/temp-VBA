@@ -1,6 +1,7 @@
 #include <windows.h>
 
 // typedef void (*fnptr)(void (*)());
+long eax_c;
 
 #define PUSH_REGISTERS  \
   asm ("pushl %eax\n"   \
@@ -25,6 +26,11 @@
       :                                                               \
       : /* "r" (AddRefOrig)   */                                      \
   );
+
+#define PUSH_RET_FUNCTION(function)   \
+    asm(" pushl _" #function "\n"     \
+        " ret\n"                      \
+    );
 
 //
 // https://gist.github.com/tfzxyinhao/2818b31a7ce94154a133
@@ -99,7 +105,7 @@ struct IUnkown_vTable *vTable;
 
 //typedef void (*funcPtr_void_void)(void);
 // funcPtr_void_void  AddRefOrig;
-funcPtr_IUnknown_QueryInterface QueryInterfaceOrig;;
+funcPtr_IUnknown_QueryInterface QueryInterfaceOrig;
 funcPtr_IUnknown_AddRef         AddRefOrig;
 funcPtr_IUnknown_Release        ReleaseOrig;
 
@@ -126,7 +132,6 @@ __declspec(dllexport) __stdcall void ChangeVTable(long** addrObj) {
   ReleaseOrig        =                    vTable->Release;
 
 
-//vTable[1]  = (long ) &AddRef;
   vTable->QueryInterface = &QueryInterface;
   vTable->AddRef         = &AddRef;
   vTable->Release        = &Release;
@@ -136,46 +141,67 @@ __declspec(dllexport) __stdcall void ChangeVTable(long** addrObj) {
 
 __stdcall HRESULT QueryInterface(void* this, const REFIID iid, void** ppv) {
 
-  PUSH_REGISTERS
+ // this =  8(%ebp)
+ // ppv  = 16(%ebp)
 
-  wchar_t* str;
-  StringFromIID(iid, &str);
+    PUSH_REGISTERS
+  
+    wchar_t* str;
+    StringFromIID(iid, &str);
+  
+    char* strIID = unicode2ascii(str);
+    writeToFile("QueryInterface, this = %p, iid = %s", this, strIID);
+    free(strIID);
+    CoTaskMemFree(str);
+  
+    HRESULT r = QueryInterfaceOrig(this, iid,ppv);
+    writeToFile("r = %ud", r);
 
-  char* strIID = unicode2ascii(str);
-  writeToFile("QueryInterface, this = %p, iid = %s", this, strIID);
-  free(strIID);
-  CoTaskMemFree(str);
+    POP_REGISTERS
+
+    return r;
+
+//    asm ("pushl 16(%ebp) \n"
+//       "  pushl 12(%ebp) \n"
+//       "  pushl  8(%ebp) \n"
+//
+////     "  pushl  4(%ebp) \n"
+////     "  movl  _QueryInterfaceOrig, %eax\n"
+//       
+//       "  call _QueryInterfaceOrig\n"
+//       "  int3\n"
+//       );
 
 
-//writeToFile("QueryInterface, this = %p, iid =   ", this                    );
 
-
-  POP_REGISTERS
-
-  JMP_TO_FUNCTION(QueryInterfaceOrig)
-
-//   asm (
-//       "movl %%ebp, %%esp\n"    // Undo initialization of
-//       "popl %%ebp\n"           // stackframe.
-//    // ----------------------------------------------
-// //    "pushl (_AddRefOrig)\n"  // Jump to original address
-// //    "ret\n"                  //
-//       "jmpl *_QueryInterfaceOrig\n"    // Jump to original address
-//       :
-// //    : "r" (AddRefOrig)
-//   );
+//
+////JMP_TO_FUNCTION(QueryInterfaceOrig)
+//  PUSH_RET_FUNCTION(QueryInterfaceOrig)
+//
+//  PUSH_REGISTERS
+  
+//  asm("movl %eax, _eax_c\n");
+//  writeToFile("eax = %d", eax_c);
+//
+//  POP_REGISTERS
 
 }
 
 __stdcall HRESULT AddRef(void* this) {
 
-  PUSH_REGISTERS
+//PUSH_REGISTERS
 
   writeToFile("AddRef, this = %p");
 
-  POP_REGISTERS
+  HRESULT r = AddRefOrig(this);
 
-  JMP_TO_FUNCTION(AddRefOrig)
+//POP_REGISTERS
+
+  writeToFile("AddRef, r = %d", r);
+
+  return r;
+
+//JMP_TO_FUNCTION(AddRefOrig)
 
 //   asm (
 //       "movl %%ebp, %%esp\n"    // Undo initialization of
@@ -192,13 +218,17 @@ __stdcall HRESULT AddRef(void* this) {
 
 __stdcall HRESULT Release(void* this) {
 
-  PUSH_REGISTERS
+//PUSH_REGISTERS
 
   writeToFile("Release, this = %p");
 
-  POP_REGISTERS
+  HRESULT r = ReleaseOrig(this);
+  writeToFile("Release, r = %d", r);
+  return r;
 
-  JMP_TO_FUNCTION(ReleaseOrig)
+//POP_REGISTERS
+
+//JMP_TO_FUNCTION(ReleaseOrig)
 
 //  asm (
 //      "movl %%ebp, %%esp\n"    // Undo initialization of
