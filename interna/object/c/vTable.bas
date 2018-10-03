@@ -10,6 +10,14 @@ sub main() ' {
    dim o1 as new obj
    dim o2 as     obj
 
+   if typeOf o1 is IUnknown then
+      debug.print "Yes, iUnknown"
+   end if
+
+'  if typeOf o1 is IDispatch then
+'     debug.print "Yes, IDispatch"
+'  end if
+
    debug.print "objPtr(o1) = " & hex(objPtr(o1))
 
    ChangeVTable o1

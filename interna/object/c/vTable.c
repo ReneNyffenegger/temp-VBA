@@ -102,6 +102,13 @@ struct IUnkown_vTable {
 
 struct IUnkown_vTable *vTable;
 
+struct vb_object {
+
+  struct IUnkown_vTable *vTbl;
+  ULONG  refCnt;
+
+};
+
 
 //typedef void (*funcPtr_void_void)(void);
 // funcPtr_void_void  AddRefOrig;
@@ -113,7 +120,9 @@ __stdcall HRESULT QueryInterface(void* this, const IID* iid, void** ppv);
 __stdcall HRESULT AddRef        (void* this);
 __stdcall HRESULT Release       (void* this);
 
-__declspec(dllexport) __stdcall void ChangeVTable(long** addrObj) {
+//__declspec(dllexport) __stdcall void ChangeVTable(struct IUnkown_vTable** addrObj)
+__declspec(dllexport) __stdcall void ChangeVTable(struct vb_object* addrObj)
+{
 
   if (vTableIsChanged) {
     writeToFile("ChangeVTable, vTable is already changed, returning");
@@ -122,7 +131,9 @@ __declspec(dllexport) __stdcall void ChangeVTable(long** addrObj) {
   }
 
   writeToFile("ChangeVTable, addrObj = %p", addrObj);
-  vTable =  (struct IUnkown_vTable*) *addrObj;
+//vTable =  (struct IUnkown_vTable*) *addrObj;
+//vTable =                           *addrObj;
+  vTable =                            addrObj->vTbl;
   writeToFile("ChangeVTable, vTable = %p", vTable);
 
 //AddRefOrig = (funcPtr_void_void)        vTable[1];
@@ -216,14 +227,18 @@ __stdcall HRESULT AddRef(void* this) {
 
 }
 
-__stdcall HRESULT Release(void* this) {
+   __stdcall HRESULT Release(void* this)
+// __stdcall HRESULT Release(struct vb_object* this)
+{
+
+  struct vb_object* vb_obj = (struct vb_object*) this;
 
 //PUSH_REGISTERS
 
-  writeToFile("Release, this = %p", this);
+  writeToFile("Release, vb_object = %p, refCnt: %d", vb_obj, vb_obj->refCnt); //, (int) *(this+4));
 
   HRESULT r = ReleaseOrig(this);
-  writeToFile("Release, r = %d", r);
+  writeToFile("Release, r = %d / refCnt: %d", r, vb_obj->refCnt); //, (int) *(this+4));
   return r;
 
 //POP_REGISTERS
