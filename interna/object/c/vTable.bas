@@ -16,6 +16,8 @@ sub main() ' {
 
    set o2 = o1
 
+   debug.print o1.F_1
+
    set o1 = nothing
    set o2 = nothing
 

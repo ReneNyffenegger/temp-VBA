@@ -144,7 +144,7 @@ __stdcall HRESULT QueryInterface(void* this, const REFIID iid, void** ppv) {
  // this =  8(%ebp)
  // ppv  = 16(%ebp)
 
-    PUSH_REGISTERS
+//  PUSH_REGISTERS
   
     wchar_t* str;
     StringFromIID(iid, &str);
@@ -155,9 +155,9 @@ __stdcall HRESULT QueryInterface(void* this, const REFIID iid, void** ppv) {
     CoTaskMemFree(str);
   
     HRESULT r = QueryInterfaceOrig(this, iid,ppv);
-    writeToFile("r = %ud", r);
+    writeToFile("r = %x", r);
 
-    POP_REGISTERS
+//  POP_REGISTERS
 
     return r;
 
@@ -191,7 +191,7 @@ __stdcall HRESULT AddRef(void* this) {
 
 //PUSH_REGISTERS
 
-  writeToFile("AddRef, this = %p");
+  writeToFile("AddRef, this = %p", this);
 
   HRESULT r = AddRefOrig(this);
 
@@ -220,7 +220,7 @@ __stdcall HRESULT Release(void* this) {
 
 //PUSH_REGISTERS
 
-  writeToFile("Release, this = %p");
+  writeToFile("Release, this = %p", this);
 
   HRESULT r = ReleaseOrig(this);
   writeToFile("Release, r = %d", r);
