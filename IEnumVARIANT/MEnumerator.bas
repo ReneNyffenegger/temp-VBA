@@ -157,6 +157,16 @@ public function get_IEnumVARIANT_vTbl_etc (     _
   '
   ' This is sort of unbelievable, but "this" must be zeroed out.
   '
+  ' Don Box states the reason for this (Advanced Visual Basic 6, p. 149):
+  '    VB thinks the data in Struct needs to be  freed when the function goes out of scope VB has no
+  '    way of knowing that ownership of the structure has moved elsewhere. If the
+  '    structure contains object or variable-size String or array types, VB will
+  '    kindly free them for you when the object goes out of scope. But you are still
+  '    using the structure, so this is an unwanted favor. To prevent VB from freeing
+  '    referenced memory in the stack object, simply ZeroMemory the structure. When
+  '    you apply the CopyMemory call's ANSI/UNICODE precautions to ZeroMemory, you
+  '    get the transfer code seen in the listing.
+  '
   ' Apparently, the combination of RtlMoveMemory and RtlZeroMemory could be
   ' achieved in one go with vbaCopyBytesZero (declared in msvbvm60.dll).
   '  
