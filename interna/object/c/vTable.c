@@ -61,12 +61,12 @@ void writeToFile(char* fmt, ...) {
 
   HANDLE hFile = CreateFile(
        "c:\\temp\\vTableTest.txt", // name of the write
-        FILE_APPEND_DATA,       // open for writing
-        FILE_SHARE_WRITE,       // 
-        NULL,                   // default security
+        FILE_APPEND_DATA,          // open for writing
+        FILE_SHARE_WRITE,          // 
+        NULL,                      // default security
         OPEN_ALWAYS,  // CREATE_NEW,             // create new file only
-        FILE_ATTRIBUTE_NORMAL,  // normal file
-        NULL);                  // no attr. template
+        FILE_ATTRIBUTE_NORMAL,     // normal file
+        NULL);                     // no attr. template
 
   DWORD x;
 
@@ -76,8 +76,10 @@ void writeToFile(char* fmt, ...) {
 
   CloseHandle(hFile);
 
+}
 
-
+__declspec(dllexport) __stdcall void dbg(char* txt) {
+    writeToFile(txt);
 }
 
 // int main() {
@@ -94,37 +96,64 @@ typedef __stdcall HRESULT (*funcPtr_IUnknown_QueryInterface)(void*, const IID*, 
 typedef __stdcall HRESULT (*funcPtr_IUnknown_AddRef        )(void*);
 typedef __stdcall HRESULT (*funcPtr_IUnknown_Release       )(void*);
 
-struct IUnkown_vTable {
+typedef __stdcall HRESULT (*funcPtr_IDispatch_GetTypeInfoCount)(void*, UINT *pctInfo);
+typedef __stdcall HRESULT (*funcPtr_IDispatch_GetTypeInfo     )(void*, UINT iTInfo, LCID lcid, ITypeInfo **ppTI);
+typedef __stdcall HRESULT (*funcPtr_IDispatch_GetIDsOfNames   )(void*, REFIID riid, LPOLESTR *rgszNames, UINT cNames, LCID lcid, DISPID *rgDispId);
+typedef __stdcall HRESULT (*funcPtr_IDispatch_Invoke          )(void*, DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pvarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr); 
+
+struct IUnknown_vTable {
   funcPtr_IUnknown_QueryInterface  QueryInterface;
   funcPtr_IUnknown_AddRef          AddRef;
   funcPtr_IUnknown_Release         Release;
 };
 
-struct IUnkown_vTable *vTable;
+struct IDispatch_vTable {
+  struct IUnknown_vTable                vtbl_IUnknown;
+  funcPtr_IDispatch_GetTypeInfoCount    GetTypeInfoCount;
+  funcPtr_IDispatch_GetTypeInfo         GetTypeInfo;
+  funcPtr_IDispatch_GetIDsOfNames       GetIDsOfNames;
+  funcPtr_IDispatch_Invoke              Invoke;
+};
+
+struct IDispatch_vTable *vTable;
 
 struct vb_object {
 
-  struct IUnkown_vTable *vTbl;
-
-  long  b[6];
-
-  struct IUnkown_vTable * iunknown;
-  ULONG  refCnt;
+ // struct IUnknown_vTable   *vTbl;
+    struct IDispatch_vTable *vTbl;
+ 
+    long  b[6];
+ 
+    struct IUnknown_vTable * iunknown;
+    ULONG  refCnt;
 
 };
 
 
+
 //typedef void (*funcPtr_void_void)(void);
 // funcPtr_void_void  AddRefOrig;
-funcPtr_IUnknown_QueryInterface QueryInterfaceOrig;
-funcPtr_IUnknown_AddRef         AddRefOrig;
-funcPtr_IUnknown_Release        ReleaseOrig;
+funcPtr_IUnknown_QueryInterface    QueryInterfaceOrig;
+funcPtr_IUnknown_AddRef            AddRefOrig;
+funcPtr_IUnknown_Release           ReleaseOrig;
+
+funcPtr_IDispatch_GetTypeInfoCount GetTypeInfoCountOrig;
+funcPtr_IDispatch_GetTypeInfo      GetTypeInfoOrig;
+funcPtr_IDispatch_GetIDsOfNames    GetIDsOfNamesOrig;
+funcPtr_IDispatch_Invoke           InvokeOrig;
 
 __stdcall HRESULT QueryInterface(void* this, const IID* iid, void** ppv);
 __stdcall HRESULT AddRef        (void* this);
 __stdcall HRESULT Release       (void* this);
 
-//__declspec(dllexport) __stdcall void ChangeVTable(struct IUnkown_vTable** addrObj)
+__stdcall HRESULT GetTypeInfoCount(void* this, UINT *pctInfo);
+__stdcall HRESULT GetTypeInfo     (void* this, UINT iTInfo, LCID lcid, ITypeInfo **ppTI);
+__stdcall HRESULT GetIDsOfNames   (void* this, REFIID riid, LPOLESTR *rgszNames, UINT cNames, LCID lcid, DISPID *rgDispId);
+__stdcall HRESULT Invoke          (void* this, DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pvarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr);
+
+
+
+//__declspec(dllexport) __stdcall void ChangeVTable(struct IUnknown_vTable** addrObj)
 __declspec(dllexport) __stdcall void ChangeVTable(struct vb_object* addrObj)
 {
 
@@ -135,21 +164,30 @@ __declspec(dllexport) __stdcall void ChangeVTable(struct vb_object* addrObj)
   }
 
   writeToFile("ChangeVTable, addrObj = %p", addrObj);
-//vTable =  (struct IUnkown_vTable*) *addrObj;
+//vTable =  (struct IUnknown_vTable*) *addrObj;
 //vTable =                           *addrObj;
   vTable =                            addrObj->vTbl;
   writeToFile("ChangeVTable, vTable = %p", vTable);
 
-//AddRefOrig = (funcPtr_void_void)        vTable[1];
-//AddRefOrig =                            vTable[1];
-  QueryInterfaceOrig =                    vTable->QueryInterface;
-  AddRefOrig         =                    vTable->AddRef;
-  ReleaseOrig        =                    vTable->Release;
+//AddRefOrig = (funcPtr_void_void)      vTable[1];
+//AddRefOrig =                          vTable[1];
+  QueryInterfaceOrig   =                vTable->vtbl_IUnknown.QueryInterface;
+  AddRefOrig           =                vTable->vtbl_IUnknown.AddRef;
+  ReleaseOrig          =                vTable->vtbl_IUnknown.Release;
 
+  GetTypeInfoCountOrig =                vTable->GetTypeInfoCount;
+  GetTypeInfoOrig      =                vTable->GetTypeInfo;
+  GetIDsOfNamesOrig    =                vTable->GetIDsOfNames;
+  InvokeOrig           =                vTable->Invoke;
 
-  vTable->QueryInterface = &QueryInterface;
-  vTable->AddRef         = &AddRef;
-  vTable->Release        = &Release;
+  vTable->vtbl_IUnknown.QueryInterface = &QueryInterface;
+  vTable->vtbl_IUnknown.AddRef         = &AddRef;
+  vTable->vtbl_IUnknown.Release        = &Release;
+
+  vTable->GetTypeInfoCount             = &GetTypeInfoCount;
+  vTable->GetTypeInfo                  = &GetTypeInfo;
+  vTable->GetIDsOfNames                = &GetIDsOfNames;
+  vTable->Invoke                       = &Invoke;
 
   vTableIsChanged = 1;
 }
@@ -169,8 +207,8 @@ __stdcall HRESULT QueryInterface(void* this, const REFIID iid, void** ppv) {
     free(strIID);
     CoTaskMemFree(str);
   
-    HRESULT r = QueryInterfaceOrig(this, iid,ppv);
-    writeToFile("r = %x", r);
+    HRESULT r = QueryInterfaceOrig(this, iid, ppv);
+    writeToFile("r = %x, ppv = %p", r, ppv);
 
 //  POP_REGISTERS
 
@@ -262,4 +300,30 @@ __stdcall HRESULT AddRef(void* this) {
 ////    : "r" (AddRefOrig)
 //  );
 
+}
+
+__stdcall HRESULT GetTypeInfoCount(void* this, UINT *pctInfo) {
+
+  struct vb_object* vb_obj = (struct vb_object*) this;
+  writeToFile("GetTypeInfoCount, vb_object = %p", vb_obj);
+
+  HRESULT r = GetTypeInfoCountOrig(this, pctInfo);
+  writeToFile("         r = %d / pctInfo: %d", r, pctInfo);
+  return r;
+
+}
+
+__stdcall HRESULT GetTypeInfo     (void* this, UINT iTInfo, LCID lcid, ITypeInfo **ppTI) {
+  writeToFile("GetTypeInfo");
+  return GetTypeInfoOrig(this, iTInfo, lcid, ppTI);
+
+}
+__stdcall HRESULT GetIDsOfNames   (void* this, REFIID riid, LPOLESTR *rgszNames, UINT cNames, LCID lcid, DISPID *rgDispId) {
+  writeToFile("GetIDsOfNames");
+  return GetIDsOfNamesOrig(this, riid, rgszNames, cNames, lcid, rgDispId);
+
+}
+__stdcall HRESULT Invoke          (void* this, DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pvarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr) {
+  writeToFile("Invoke");
+  return InvokeOrig               (      this,        dispidMember,        riid,      lcid,      wFlags,             pDispParams, pvarResult, pExcepInfo, puArgErr);
 }
