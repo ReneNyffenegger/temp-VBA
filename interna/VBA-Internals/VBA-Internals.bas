@@ -1,14 +1,17 @@
 option explicit
 
+'       lib "C:\Users\r.nyffenegger\personal\VBA-Internals\VBA-Internals.dll" (  _
+'          lib "c:\temp\temp-VBA\interna\VBA-Internals\VBA-Internals.dll" (  _
 
 declare sub addDllFunctionBreakpoint                                             _
-        lib "C:\Users\r.nyffenegger\personal\VBA-Internals\VBA-Internals.dll" (  _
+           lib "VBA-Internals.dll" (  _
            byVal module   as string,                                                   _
            byVal funcName as string                                                    _
         )
 
+'       lib "C:\Users\r.nyffenegger\personal\VBA-Internals\VBA-Internals.dll" (  
 declare sub VBAInternalsInit                                                     _
-        lib "C:\Users\r.nyffenegger\personal\VBA-Internals\VBA-Internals.dll" (  _
+           lib "VBA-Internals.dll" (  _
            byVal addrCallBack as long                                            _
         )
 
