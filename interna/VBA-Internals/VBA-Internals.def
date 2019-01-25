@@ -1,0 +1,5 @@
+LIBRARY VBA-Internals
+EXPORTS
+  addBreakpoint
+  addDllFunctionBreakpoint
+  VBAInternalsInit
