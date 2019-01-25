@@ -92,64 +92,21 @@ __declspec(dllexport) __stdcall void dbg(char* txt) {
 
 // long *vTable;
 
-typedef __stdcall HRESULT (*funcPtr_IUnknown_QueryInterface)(void*, const IID*, void**);
-typedef __stdcall HRESULT (*funcPtr_IUnknown_AddRef        )(void*);
-typedef __stdcall HRESULT (*funcPtr_IUnknown_Release       )(void*);
-
-typedef __stdcall HRESULT (*funcPtr_IDispatch_GetTypeInfoCount)(void*, UINT *pctInfo);
-typedef __stdcall HRESULT (*funcPtr_IDispatch_GetTypeInfo     )(void*, UINT iTInfo, LCID lcid, ITypeInfo **ppTI);
-typedef __stdcall HRESULT (*funcPtr_IDispatch_GetIDsOfNames   )(void*, REFIID riid, LPOLESTR *rgszNames, UINT cNames, LCID lcid, DISPID *rgDispId);
-typedef __stdcall HRESULT (*funcPtr_IDispatch_Invoke          )(void*, DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pvarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr); 
-
-struct IUnknown_vTable {
-  funcPtr_IUnknown_QueryInterface  QueryInterface;
-  funcPtr_IUnknown_AddRef          AddRef;
-  funcPtr_IUnknown_Release         Release;
-};
-
-struct IDispatch_vTable {
-  struct IUnknown_vTable                vtbl_IUnknown;
-  funcPtr_IDispatch_GetTypeInfoCount    GetTypeInfoCount;
-  funcPtr_IDispatch_GetTypeInfo         GetTypeInfo;
-  funcPtr_IDispatch_GetIDsOfNames       GetIDsOfNames;
-  funcPtr_IDispatch_Invoke              Invoke;
-};
-
-struct IDispatch_vTable *vTable;
+//  IUnknown_vTable 
+//  IDispatch_vTable:
+//    --> GONE TO about-COM/c/structs!
 
 struct vb_object {
 
  // struct IUnknown_vTable   *vTbl;
-    struct IDispatch_vTable *vTbl;
+    struct IDispatch_vTable *vTbl;   // Probably 3rd element
  
     long  b[6];
  
-    struct IUnknown_vTable * iunknown;
+    struct IUnknown_vTable * iunknown; // Probably first element
     ULONG  refCnt;
 
 };
-
-
-
-//typedef void (*funcPtr_void_void)(void);
-// funcPtr_void_void  AddRefOrig;
-funcPtr_IUnknown_QueryInterface    QueryInterfaceOrig;
-funcPtr_IUnknown_AddRef            AddRefOrig;
-funcPtr_IUnknown_Release           ReleaseOrig;
-
-funcPtr_IDispatch_GetTypeInfoCount GetTypeInfoCountOrig;
-funcPtr_IDispatch_GetTypeInfo      GetTypeInfoOrig;
-funcPtr_IDispatch_GetIDsOfNames    GetIDsOfNamesOrig;
-funcPtr_IDispatch_Invoke           InvokeOrig;
-
-__stdcall HRESULT QueryInterface(void* this, const IID* iid, void** ppv);
-__stdcall HRESULT AddRef        (void* this);
-__stdcall HRESULT Release       (void* this);
-
-__stdcall HRESULT GetTypeInfoCount(void* this, UINT *pctInfo);
-__stdcall HRESULT GetTypeInfo     (void* this, UINT iTInfo, LCID lcid, ITypeInfo **ppTI);
-__stdcall HRESULT GetIDsOfNames   (void* this, REFIID riid, LPOLESTR *rgszNames, UINT cNames, LCID lcid, DISPID *rgDispId);
-__stdcall HRESULT Invoke          (void* this, DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pvarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr);
 
 
 
