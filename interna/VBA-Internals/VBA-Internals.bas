@@ -30,8 +30,13 @@ sub main() '
     debug.print "Next line explicititely calls rtcRound (via round)"
     i = round(42.7)
 
+'   call addDllFunctionBreakpoint("VBE7.dll", "rtcRound" )
+
     debug.print "Does next line call rtcMsgBox?"
     MsgBox "i = " & i
+
+    debug.print "Calling round again"
+    i = round(42.7)
 end sub ' }
 
 sub callBack(byVal txt as string) ' {
