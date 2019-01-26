@@ -8,7 +8,12 @@
 #include <windows.h>
 #include <stdlib.h>
 
+#define USE_SEARCH
+
+#ifdef USE_SEARCH
+#else
 #define NOF_BREAKPOINTS 2
+#endif
 
 
 LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr);
@@ -19,15 +24,20 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr);
 // #include "c:\about\libc\search\t\search.c"
 #include <search.h>
 
+#define TQ84_DEBUG_ENABLED
+#define TQ84_DEBUG_TO_FILE
+#include "c:\lib\tq84-c-debug\tq84_debug.c"
+
 
 // --------------------------------------------------------------------
 
-typedef char   instruction;
+typedef unsigned char   instruction;
 typedef LPVOID address;
 
 
 
 instruction replaceInstruction(address addr, instruction instr) {
+    TQ84_DEBUG_INDENT_T("replaceInstruction, addr=%d, byte = %u", addr, instr);
 
     char txt[400];
 
@@ -38,11 +48,14 @@ instruction replaceInstruction(address addr, instruction instr) {
 //  msg_2(txt);
 
 
+    TQ84_DEBUG("VirtualProtect");
     VirtualProtect(addr, 1, PAGE_EXECUTE_READWRITE, &oldProtection);
 
     oldInstr =  *((instruction*) addr);
+    TQ84_DEBUG("old byte = %u, now going to changing to %u", oldInstr, instr);
  *((instruction*) addr) = instr;
 
+    TQ84_DEBUG("Returning old byte: %u", oldInstr); 
 
 //  wsprintf(txt, "replace instruction %x with %x at %d", oldInstr, instr, addr);
 //  msg_2("replaced");
@@ -61,6 +74,9 @@ breakpoint;
 // int compareBreakpoints(const breakpoint *const f1, const breakpoint *const f2) 
    int compareBreakpoints(const void       *const f1, const void       *const f2)
 {
+
+  TQ84_DEBUG_INDENT_T("compareBreakpoints, addr 1 = %d, addr 2 = %d", ((breakpoint*)f1)->addr, ((breakpoint*)f2)->addr);
+
   char txt[400];
 //wsprintf(txt, "Comparing f1 (%d, addr: %d, %s) with f2 (%d, addr: %d, %s)", f1, ((breakpoint*)f1)->addr, ((breakpoint*)f1)->name, f2, ((breakpoint*)f2)->addr, ((breakpoint*)f2)->name);
 // MM  wsprintf(txt, "Comparing f1 (%d, addr: %d    ) with f2 (%d, addr: %d    )", f1, ((breakpoint*)f1)->addr,                          f2, ((breakpoint*)f2)->addr                         );
@@ -73,9 +89,12 @@ breakpoint;
 
 __declspec(dllexport) void __stdcall addBreakpoint(address addr, char* name) {
 
+    TQ84_DEBUG_INDENT_T("addBreakpoint, addr = %d, name = %s", addr, name);
     
     char txt[400]; 
     breakpoint *f;
+
+
 
 // MM    wsprintf(txt, "addBreakpoint %s at %d", name, addr);
 // MM    msg(txt);
@@ -92,11 +111,13 @@ __declspec(dllexport) void __stdcall addBreakpoint(address addr, char* name) {
 // MM    wsprintf(txt, "addBreakpoint, after f->name = strdup(name): %s, addr(name) = %d, f = %d", f->name, f->name, f);
 // MM    msg(txt);
 
+    TQ84_DEBUG("going to call replaceInstruction");
     f->origInstruction = replaceInstruction(addr, 0xcc); // 0xcc = INT3
 //  msg("returned from replaceInstruction");
 
 // MM    wsprintf(txt, "addBreakpoint f->name = %s, addr f->name= %d, addr = %d, f = %d, f->origInstruction: %x", f->name, f->name, f->addr, f, f->origInstruction);
 // MM    msg_2(txt);
+    TQ84_DEBUG("going to call tsearch");
     tsearch(f, &breakpointTreeRoot, compareBreakpoints);
 //  tsearch( (void*) addr, &breakpointTreeRoot, compareBreakpoints);
 //  msg("leaving addBreakpoint");
@@ -124,7 +145,7 @@ __declspec(dllexport) void __stdcall addDllFunctionBreakpoint(char* module, char
           return;
      }
 
-// MM     wsprintf(breakpointName, "%s.%s", module, funcName);
+     wsprintf(breakpointName, "%s.%s", module, funcName);
 // MM     msg(breakpointName);
 
      addBreakpoint(addr, breakpointName);
@@ -133,19 +154,26 @@ __declspec(dllexport) void __stdcall addDllFunctionBreakpoint(char* module, char
 }
 
 
-// address      func_addrs[NOF_BREAKPOINTS];
-// instruction  old_instr [NOF_BREAKPOINTS];
-
-// QQ int   nrLastFuncBreakpointHit;
+#ifdef USE_SEARCH
 address      addrLastBreakpointHit;
+#else
+address      func_addrs[NOF_BREAKPOINTS];
+instruction  old_instr [NOF_BREAKPOINTS];
+int   nrLastFuncBreakpointHit;
+#endif
 
-typedef void (WINAPI *addrCallBack_t)(BSTR);
+
+
+
+// typedef void (WINAPI   *addrCallBack_t)(BSTR);
+   typedef void (CALLBACK *addrCallBack_t)(BSTR);
 addrCallBack_t addrCallBack;
 
 
 
 
 void callCallback(char* txt) {
+    TQ84_DEBUG("callCallback, txt = %s", txt);
     int wslen;
     BSTR bstr;
 
@@ -165,8 +193,12 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) {
     char txt[400];
 
     if (exPtr->ExceptionRecord->ExceptionCode == EXCEPTION_BREAKPOINT) {
+       TQ84_DEBUG("EXCEPTION_BREAKPOINT");
+       TQ84_DEBUG("EXCEPTION_BREAKPOINT, addr = %d", exPtr->ContextRecord->Eip);
 
-//    wsprintf(txt,"EXCEPTION_BREAKPOINT @ address %x", exPtr->ContextRecord->Eip);
+#ifdef USE_SEARCH
+
+
 //    callCallback(txt);
 //
 //
@@ -174,6 +206,7 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) {
        breakpoint **breakpointFound;
        breakpoint  *breakpointHit;
        address addressHitByBreakpoint = (address) exPtr->ContextRecord->Eip;
+       TQ84_DEBUG("addressHitByBreakpoint = %d", exPtr->ContextRecord->Eip);
 //     addressHitByBreakpoint = (address) (( (DWORD) addressHitByBreakpoint) - 1);
 
 //MM     wsprintf(txt, "addressHitByBreakpoint = %d", addressHitByBreakpoint);
@@ -191,6 +224,7 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) {
 
 
        if (!breakpointFound) {
+         TQ84_DEBUG("Did not tfind breakpointHit...");
          MessageBox(0, "Did not tfind breakpointHit...", 0, 0);
        }
        else {
@@ -201,8 +235,9 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) {
 //        msg(txt);
 //        wsprintf(txt, "breakpointHit = %d", breakpointHit);
 
-//        wsprintf(txt, "Hit Breakpoint, breakpointHit = %d, addr = %d (name = %s, addr(name) = %d), origInstr: %x", breakpointHit, breakpointHit->addr, breakpointHit->name, breakpointHit->name, breakpointHit->origInstruction);
-          wsprintf(txt, "Hit Breakpoint %s", breakpointHit->name);
+          wsprintf(txt, "Hit Breakpoint, breakpointHit = %d, addr = %d (name = %s, addr(name) = %d), origInstr: %x", breakpointHit, breakpointHit->addr, breakpointHit->name, breakpointHit->name, breakpointHit->origInstruction);
+          TQ84_DEBUG(txt);
+//        wsprintf(txt, "Hit Breakpoint %s", breakpointHit->name);
 //        msg_2(txt);
           callCallback(txt);
    
@@ -211,79 +246,104 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) {
           replaceInstruction(addressHitByBreakpoint, breakpointHit->origInstruction);
 
        // Single Step:
-          exPtr->ContextRecord->EFlags |= 0x100;
+//        exPtr->ContextRecord->EFlags |= 0x100;
+
+          TQ84_DEBUG("Going to call SetThreadContext");
 
           SetThreadContext(GetCurrentThread(), exPtr->ContextRecord);
        }
 
+#else
 
-// QQ       for (i=0; i<NOF_BREAKPOINTS; i++) {
-// QQ   
-// QQ         // The EIP register contains the address of the break point
-// QQ         // instruction that triggered the exception.
-// QQ         // This allows to determine the number of the breakpoint:
-// QQ           if (exPtr->ContextRecord->Eip == (int) func_addrs[i]) {
-// QQ 
-// QQ               wsprintf(txt, "Breakpoint %d was hit", i);
-// QQ               callCallback(txt);
-// QQ 
-// QQ            //
-// QQ            // Store the number of the breakpoint so that we can
-// QQ            // set the breakpoint again after single stepping
-// QQ            // the »current« instruction:
-// QQ            //
-// QQ               nrLastFuncBreakpointHit = i;
-// QQ   
-// QQ            //
-// QQ            // In order to proceed with the execution of the program, we
-// QQ            // restore the old value of the byte that was replaced by
-// QQ            // the int-3 instruction:
-// QQ            //
-// QQ               replaceInstruction(func_addrs[i], old_instr[i]);
-// QQ   
-// QQ            //
-// QQ            // Set TF bit in order to single step the next
-// QQ            // instruction. This allows to set the break point
-// QQ            // again after the single step instruction.
-// QQ            //
-// QQ   
-// QQ               exPtr->ContextRecord->EFlags |= 0x100;
-// QQ   
-// QQ            //
-// QQ            // Resume execution:
-// QQ            //
-// QQ               SetThreadContext(GetCurrentThread(), exPtr->ContextRecord);
-// QQ           }
-// QQ        }
 
+       for (i=0; i<NOF_BREAKPOINTS; i++) {
+   
+         // The EIP register contains the address of the break point
+         // instruction that triggered the exception.
+         // This allows to determine the number of the breakpoint:
+           if (exPtr->ContextRecord->Eip == (int) func_addrs[i]) {
+ 
+               wsprintf(txt, "Breakpoint %d was hit", i);
+               callCallback(txt);
+ 
+            //
+            // Store the number of the breakpoint so that we can
+            // set the breakpoint again after single stepping
+            // the »current« instruction:
+            //
+               nrLastFuncBreakpointHit = i;
+   
+            //
+            // In order to proceed with the execution of the program, we
+            // restore the old value of the byte that was replaced by
+            // the int-3 instruction:
+            //
+               replaceInstruction(func_addrs[i], old_instr[i]);
+   
+            //
+            // Set TF bit in order to single step the next
+            // instruction. This allows to set the break point
+            // again after the single step instruction.
+            //
+   
+//             exPtr->ContextRecord->EFlags |= 0x100;
+   
+            //
+            // Resume execution:
+            //
+               SetThreadContext(GetCurrentThread(), exPtr->ContextRecord);
+           }
+        }
+#endif
+
+       TQ84_DEBUG  ("EXCEPTION_BREAKPOINT: no matching address found");
        callCallback("EXCEPTION_BREAKPOINT: no matching address found");
        return EXCEPTION_CONTINUE_SEARCH;
+
     }
     else if (exPtr->ExceptionRecord->ExceptionCode == EXCEPTION_SINGLE_STEP) {
-    // callCallback("EXCEPTION_SINGLE_STEP");
-
-    //
-    // The processor is one instruction behind the last breakpoint that was
-    // hit. We can now set the breakpoint again.
+       TQ84_DEBUG("EXCEPTION_SINGLE_STEP");
+       TQ84_DEBUG("EXCEPTION_SINGLE_STEP: Address: %d", exPtr->ContextRecord->Eip);
 
 
-//     TODO: Uncomment me:
-//     *func_addrs[nrLastFuncBreakpointHit] = 0xcc;
-// QQ  replaceInstruction(func_addrs[nrLastFuncBreakpointHit], 0xcc);
+#ifdef USE_SEARCH
 
-//     msg_2("Single Step: Replacing instruction in single step");
+       TQ84_DEBUG("EXCEPTION_SINGLE_STEP: going to replaceInstruction at lastAddrBreakpoint hit: %d", addrLastBreakpointHit);
        replaceInstruction(addrLastBreakpointHit, 0xcc); // INT3              
-//     msg_2("Single Step: instruction was replaced, going to call SetThreadContext");
 
-    //
-    // Apparently, the TF flag is reset after the single execution, it
-    // needs not be reset.
-    //
-    // Thus, we can resume execution again:
-    //
+#else
 
-    // callCallback("EXCEPTION_SINGLE_STEP -> SetThreadContext");
-     //exPtr->ContextRecord->EFlags |= 0x100;
+// QQ      replaceInstruction(func_addrs[nrLastFuncBreakpointHit], 0xcc);
+
+
+// OLD     // callCallback("EXCEPTION_SINGLE_STEP");
+// OLD 
+// OLD     //
+// OLD     // The processor is one instruction behind the last breakpoint that was
+// OLD     // hit. We can now set the breakpoint again.
+// OLD 
+// OLD 
+// OLD //     TODO: Uncomment me:
+// OLD //     *func_addrs[nrLastFuncBreakpointHit] = 0xcc;
+// OLD // QQ  replaceInstruction(func_addrs[nrLastFuncBreakpointHit], 0xcc);
+// OLD 
+// OLD //     msg_2("Single Step: Replacing instruction in single step");
+// OLD //     msg_2("Single Step: instruction was replaced, going to call SetThreadContext");
+// OLD 
+// OLD     //
+// OLD     // Apparently, the TF flag is reset after the single execution, it
+// OLD     // needs not be reset.
+// OLD     //
+// OLD     // Thus, we can resume execution again:
+// OLD     //
+// OLD 
+// OLD     // callCallback("EXCEPTION_SINGLE_STEP -> SetThreadContext");
+
+#endif
+
+//     exPtr->ContextRecord->EFlags |= 0x100;
+
+       TQ84_DEBUG("Going to call SetThreadContext");
        SetThreadContext(GetCurrentThread(), exPtr->ContextRecord);
 
     }
@@ -318,13 +378,16 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) {
 //         else if (exPtr->ExceptionRecord->ExceptionCode == EXCEPTION_POSSIBLE_DEADLOCK          ) MessageBox(0, "Unexpected exception EXCEPTION_POSSIBLE_DEADLOCK        ",  0, 0);
            else {
 
-//             wsprintf(txt, "Unexpected exception with code %8x", exPtr->ExceptionRecord->ExceptionCode);
+               TQ84_DEBUG("Unexpected exception with code %d at address %d", exPtr->ExceptionRecord->ExceptionCode, exPtr->ContextRecord->Eip);
+//             wsprintf(txt, "Unexpected exception with code %d at address %d", exPtr->ExceptionRecord->ExceptionCode, exPtr->ContextRecord->Eip);
+//             TQ84_DEBUG(txt);
+//             msg_2(txt);
 //             callCallback(txt);
 
            }
 
- //        SetThreadContext(GetCurrentThread(), exPtr->ContextRecord);
-    
+     //    SetThreadContext(GetCurrentThread(), exPtr->ContextRecord);
+           return EXCEPTION_CONTINUE_SEARCH;
     }
 
 
@@ -332,6 +395,9 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) {
 }
 
 __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBack_) {
+
+    TQ84_DEBUG_INDENT_T("VBAInternalsInit");
+
 
     int i, res;
 
@@ -342,37 +408,45 @@ __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBac
 
 
     addrCallBack = addrCallBack_;
+    callCallback("addrCallBack assigned");
 
     AddVectoredExceptionHandler(1, VectoredHandler);
 
 //  msg("VBAInternalsInit leaving");
 
- // func_addrs[0] = (char*) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcMsgBox");
- // func_addrs[1] = (char*) func_1;
+//  func_addrs[0] = (char*) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcMsgBox");
+//  func_addrs[1] = (char*) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcRound" );
+
  // func_addrs[2] = (char*) func_2;
  // func_addrs[3] = (char*) func_3;
 
-// QQ    for (i=0; i<NOF_BREAKPOINTS; i++) {
-// QQ     //
-// QQ     // Setting the breakpoints at the functions addresses.
-// QQ     //
-// QQ     // First, we need to make the code segment writable to be able to
-// QQ     // insert the breakpoint instruction. Otherwise, the modification of
-// QQ     // the (read-only) code segment would cause an exception.
-// QQ     //
-// QQ
-// QQ        DWORD oldProtection;
-// QQ        VirtualProtect(func_addrs[i], 1, PAGE_EXECUTE_READWRITE, &oldProtection);
-// QQ
-// QQ     //
-// QQ     // Inject the int-3 instruction (0xcc):
-// QQ     // 
-// QQ     // We also want to store the value of the byte before we set the int-3
-// QQ     // instruction:
-// QQ     //
-// QQ        old_instr[i] = replaceInstruction(func_addrs[i], 0xcc);
-// QQ
-// QQ    }
+#ifdef USE_SEARCH
+#else
+    for (i=0; i<NOF_BREAKPOINTS; i++) {
+       callCallback("Breakpoint");
+       TQ84_DEBUG_INDENT_T("i = %d", i);
+     //
+     // Setting the breakpoints at the functions addresses.
+     //
+     // First, we need to make the code segment writable to be able to
+     // insert the breakpoint instruction. Otherwise, the modification of
+     // the (read-only) code segment would cause an exception.
+     //
+
+        DWORD oldProtection;
+        VirtualProtect(func_addrs[i], 1, PAGE_EXECUTE_READWRITE, &oldProtection);
+
+     //
+     // Inject the int-3 instruction (0xcc):
+     // 
+     // We also want to store the value of the byte before we set the int-3
+     // instruction:
+     //
+        old_instr[i] = replaceInstruction(func_addrs[i], 0xcc);
+
+    }
+#endif
+
 }
 
 BOOL WINAPI DllMain(
@@ -382,6 +456,14 @@ BOOL WINAPI DllMain(
 ) {
 
    int i;
+   static int debug_is_open = 0;
+
+   if (!debug_is_open) {
+      tq84_debug_open("c:\\temp\\dbg.vba", "w");
+      debug_is_open ++;
+   }
+
+   TQ84_DEBUG_INDENT_T("DllMain");
 
 // if      (fdwReason == DLL_PROCESS_ATTACH) {    MessageBox(0, "DllMain DLL_PROCESS_ATTACH", 0, 0)    ;}
 // else if (fdwReason == DLL_PROCESS_DETACH) {    MessageBox(0, "DllMain DLL_PROCESS_DETACH", 0, 0)    ;}
@@ -389,16 +471,26 @@ BOOL WINAPI DllMain(
 // else if (fdwReason == DLL_THREAD_DETACH ) { /* MessageBox(0, "DllMain DLL_THREAD_DETACH ", 0, 0) */ ;}
 // else                                      {    MessageBox(0, "DllMain hmmmm???"          , 0, 0)    ;}
 
-// if (fdwReason == DLL_PROCESS_ATTACH) {
-//    func_addrs[0] = (address) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcMsgBox");
-//    func_addrs[1] = (address) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcRound" );
-// }
+   if (fdwReason == DLL_PROCESS_ATTACH) {
+      TQ84_DEBUG("fdwReason == DLL_PROCESS_ATTACH");
+#ifdef USE_SEARCH
+#else
+      func_addrs[0] = (address) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcMsgBox");
+      func_addrs[1] = (address) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcRound" );
+#endif
 
-// if (fdwReason == DLL_PROCESS_DETACH) {
-//    for (i=0; i<NOF_BREAKPOINTS; i++) {
-//      replaceInstruction(func_addrs[i], old_instr[i]);
-//    }
-// }
+   }
+
+   if (fdwReason == DLL_PROCESS_DETACH) {
+      TQ84_DEBUG("DLL_PROCESS_DETACH");
+#ifdef USE_SEARCH
+#else
+      for (i=0; i<NOF_BREAKPOINTS; i++) {
+        TQ84_DEBUG("going to call replaceInstruction");
+        replaceInstruction(func_addrs[i], old_instr[i]);
+      }
+#endif
+   }
 
    return TRUE;
 

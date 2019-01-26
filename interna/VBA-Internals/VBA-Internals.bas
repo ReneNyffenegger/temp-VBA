@@ -1,7 +1,7 @@
 option explicit
 
 '       lib "C:\Users\r.nyffenegger\personal\VBA-Internals\VBA-Internals.dll" (  _
-'          lib "c:\temp\temp-VBA\interna\VBA-Internals\VBA-Internals.dll" (  _
+'       lib "c:\temp\temp-VBA\interna\VBA-Internals\VBA-Internals.dll" (  _
 
 declare sub addDllFunctionBreakpoint                                             _
            lib "VBA-Internals.dll" (  _
