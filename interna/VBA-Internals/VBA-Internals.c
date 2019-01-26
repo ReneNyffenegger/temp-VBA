@@ -4,9 +4,13 @@
 //  gcc -c VBA-Internals.c
 //  gcc -shared VBA-Internals.o -lOleAut32 -o VBA-Internals.dll -Wl,--add-stdcall-alias
 //
+//  TODO
+//    Detouring: https://reverseengineering.stackexchange.com/a/13694
 
 #include <windows.h>
 #include <stdlib.h>
+
+// #include "vbObject.h"
 
 #define USE_SEARCH
 
@@ -50,30 +54,28 @@ instruction replaceInstruction(address addr, instruction instr) { // {
 //  msg_2(txt);
 
 
-    TQ84_DEBUG("VirtualProtect");
+//  TQ84_DEBUG("VirtualProtect");
     VirtualProtect(addr, 1, PAGE_EXECUTE_READWRITE, &oldProtection);
 
 //  oldInstr =  *((instruction*) addr);
     if (! ReadProcessMemory(curProcess, addr, &oldInstr, 1, &nofBytes)) {
       MessageBox(0, "Could not ReadProcessMemory", 0, 0);
     }
-    TQ84_DEBUG("nofBytes read: %d, byte = %u, now going to change to %u", nofBytes, oldInstr, instr);
+//  TQ84_DEBUG("nofBytes read: %d, byte = %u, now going to change to %u", nofBytes, oldInstr, instr);
 
 // *((instruction*) addr) = instr;
     if (! WriteProcessMemory(curProcess, addr, &instr, 1, &nofBytes)) {
       MessageBox(0, "Could not ReadProcessMemory", 0, 0);
     }
-    TQ84_DEBUG("nofBytes written: %d", nofBytes);
+//  TQ84_DEBUG("nofBytes written: %d", nofBytes);
 
 //  VirtualProtect(addr, 1, oldProtection, &oldProtection);
 
-//  FlushInstructionCache(GetCurrentProcess(), 0, 0);
-    if (! FlushInstructionCache(curProcess, addr, 10)) {
-      MessageBox(0, "Could not FlushInstructionCache", 0, 0);
+//  if (! FlushInstructionCache(curProcess, addr, 10)) {
+//    MessageBox(0, "Could not FlushInstructionCache", 0, 0);
+//  }
 
-    }
-
-    TQ84_DEBUG("Returning old byte: %u", oldInstr); 
+//  TQ84_DEBUG("Returning old byte: %u", oldInstr); 
 
 //  wsprintf(txt, "replace instruction %x with %x at %d", oldInstr, instr, addr);
 //  msg_2("replaced");
@@ -85,6 +87,7 @@ typedef struct { // {
     address       addr;
     char         *name;
     instruction   origInstruction;
+    char         *format;
 }
 breakpoint; // }
 
@@ -103,7 +106,7 @@ int compareBreakpoints(const void *const f1, const void *const f2) { // {
 // breakpoint *breakpointTreeRoot = 0;
    void       *breakpointTreeRoot = 0;
 
-__declspec(dllexport) void __stdcall addBreakpoint(address addr, char* name) { // {
+__declspec(dllexport) void __stdcall addBreakpoint(address addr, char* name, char* format) { // {
 
     TQ84_DEBUG_INDENT_T("addBreakpoint, addr = %d, name = %s", addr, name);
     
@@ -121,7 +124,8 @@ __declspec(dllexport) void __stdcall addBreakpoint(address addr, char* name) { /
 // MM    msg(txt);
 
     f->addr            = addr;
-    f->name            = strdup(name);
+    f->name            = strdup(name  );
+    f->format          = strdup(format);
 //  msg("calling replaceInstruction");
 
 // MM    wsprintf(txt, "addBreakpoint, after f->name = strdup(name): %s, addr(name) = %d, f = %d", f->name, f->name, f);
@@ -139,24 +143,28 @@ __declspec(dllexport) void __stdcall addBreakpoint(address addr, char* name) { /
 //  msg("leaving addBreakpoint");
 } // }
 
-__declspec(dllexport) void __stdcall addDllFunctionBreakpoint(char* module, char* funcName) { // {
+__declspec(dllexport) void __stdcall addDllFunctionBreakpoint(char* module, char* funcName, char* format) { // {
 
      address addr;
      HMODULE mod;
      char    breakpointName[200];
      char    txt           [400];
 
+     TQ84_DEBUG_INDENT_T("addDllFunctionBreakpoint, module = %s, funcName = s, format = %s", module, funcName, format);
+
 // MM     wsprintf(txt, "addDllFunctionBreakpoint %s / %s", module, funcName);
 // MM     msg(txt);
 
      mod = GetModuleHandle(module);
      if (! mod) {
+       TQ84_DEBUG("! mod");
        MessageBox(0, module, "GetModuleHandle", 0);
        return;
      }
 
      addr = GetProcAddress(mod, funcName);
      if (!addr) {
+       TQ84_DEBUG("! addr");
           MessageBox(0, funcName, "GetProcAddress", 0);
           return;
      }
@@ -164,7 +172,7 @@ __declspec(dllexport) void __stdcall addDllFunctionBreakpoint(char* module, char
      wsprintf(breakpointName, "%s.%s", module, funcName);
 // MM     msg(breakpointName);
 
-     addBreakpoint(addr, breakpointName);
+     addBreakpoint(addr, breakpointName, format);
 //   msg("leaving addDllFunctionBreakpoint");
 
 } // }
@@ -187,24 +195,23 @@ addrCallBack_t addrCallBack;
 
 
 void callCallback(char* txt) { // {
-    TQ84_DEBUG_INDENT_T("callCallback, txt = %s", txt);
-    int wslen;
-    BSTR bstr;
-
-    wslen = MultiByteToWideChar(CP_ACP, 0, txt, strlen(txt),    0,     0); bstr  = SysAllocStringLen(0, wslen);
-            MultiByteToWideChar(CP_ACP, 0, txt, strlen(txt), bstr, wslen);
-
-   (*addrCallBack)(bstr);
-
-    SysFreeString(bstr);
-
+     TQ84_DEBUG_INDENT_T("callCallback, txt = %s", txt);
+     int wslen;
+     BSTR bstr;
+ 
+     wslen = MultiByteToWideChar(CP_ACP, 0, txt, strlen(txt),    0,     0); bstr  = SysAllocStringLen(0, wslen);
+             MultiByteToWideChar(CP_ACP, 0, txt, strlen(txt), bstr, wslen);
+ 
+    (*addrCallBack)(bstr);
+ 
+     SysFreeString(bstr);
 } // }
 
 LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) { // {
 
-
     int i;
-    char txt[400];
+    char txt [400];
+    char txt_[400];
 
     if      (exPtr->ExceptionRecord->ExceptionCode == EXCEPTION_BREAKPOINT ) { // {
 
@@ -212,14 +219,12 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) { // {
 
        TQ84_DEBUG_INDENT_T("EXCEPTION_BREAKPOINT, addr = %d", exPtr->ContextRecord->Eip);
 
-//    callCallback(txt);
-//
-//
 
        breakpoint **breakpointFound;
        breakpoint  *breakpointHit;
        address addressHitByBreakpoint = (address) exPtr->ContextRecord->Eip;
-       TQ84_DEBUG("addressHitByBreakpoint = %d", exPtr->ContextRecord->Eip);
+
+//     TQ84_DEBUG("addressHitByBreakpoint = %d", exPtr->ContextRecord->Eip);
 //     addressHitByBreakpoint = (address) (( (DWORD) addressHitByBreakpoint) - 1);
 
 //MM     wsprintf(txt, "addressHitByBreakpoint = %d", addressHitByBreakpoint);
@@ -228,11 +233,7 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) { // {
 
        breakpoint findMe;
        findMe.addr = addressHitByBreakpoint;
-//     breakpoint* p;
-//     p = &findMe;
 
-
-//     breakpointHit = tfind(&findMe, &breakpointTreeRoot, compareBreakpoints);
        breakpointFound = tfind(&findMe, &breakpointTreeRoot, compareBreakpoints);
 
 
@@ -248,9 +249,13 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) { // {
 //        msg(txt);
 //        wsprintf(txt, "breakpointHit = %d", breakpointHit);
 
-//        wsprintf(txt, "Hit Breakpoint, breakpointHit = %d, addr = %d (name = %s, addr(name) = %d), orig instr1stByte: %d", breakpointHit, breakpointHit->addr, breakpointHit->name, breakpointHit->name, breakpointHit->origInstruction);
-          wsprintf(txt, "Hit Breakpoint: %s", breakpointHit->name);
-          TQ84_DEBUG(txt);
+//        wsprintf(txt ,"Hit Breakpoint, breakpointHit = %d, addr = %d (name = %s, addr(name) = %d), orig instr1stByte: %d", breakpointHit, breakpointHit->addr, breakpointHit->name, breakpointHit->name, breakpointHit->origInstruction);
+          wsprintf(txt_,">>%s<<: >>%s<<", breakpointHit->name, breakpointHit->format);
+//        TQ84_DEBUG("txt_: %s", txt_);
+
+          unsigned long* esp = (unsigned long*) exPtr->ContextRecord->Esp;
+          wsprintf(txt , txt_, *(esp+1), *(esp+2), *(esp+3), *(esp+4),*(esp+5), *(esp+6), *(esp+7), *(esp+8));
+          TQ84_DEBUG("txt = %s", txt);
 
 //        wsprintf(txt, "Hit Breakpoint %s", breakpointHit->name);
 //        msg_2(txt);
@@ -263,7 +268,7 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) { // {
        // Single Step:
           exPtr->ContextRecord->EFlags |= 0x100;
 
-          TQ84_DEBUG("Going to call SetThreadContext");
+       // TQ84_DEBUG("Going to call SetThreadContext");
 
           tq84_debug_dedent();
           SetThreadContext(GetCurrentThread(), exPtr->ContextRecord);
@@ -302,7 +307,7 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) { // {
             // again after the single step instruction.
             //
    
-//             exPtr->ContextRecord->EFlags |= 0x100;
+               exPtr->ContextRecord->EFlags |= 0x100;
    
             //
             // Resume execution:
@@ -318,7 +323,6 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) { // {
 
     } // }
     else if (exPtr->ExceptionRecord->ExceptionCode == EXCEPTION_SINGLE_STEP) { // {
-       TQ84_DEBUG("EXCEPTION_SINGLE_STEP");
        TQ84_DEBUG("EXCEPTION_SINGLE_STEP: Address: %d", exPtr->ContextRecord->Eip);
 
 
@@ -477,14 +481,12 @@ __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBac
 
     TQ84_DEBUG_INDENT_T("VBAInternalsInit");
 
-
     int i, res;
 
     char txt[400];
 
 //  wsprintf(txt, "VBAInternalsInit, sizeof(address) = %d", sizeof(address));
 //  msg(txt);
-
 
     addrCallBack = addrCallBack_;
     callCallback("addrCallBack assigned");
@@ -552,7 +554,7 @@ BOOL WINAPI DllMain( // {
 // else if (fdwReason == DLL_THREAD_DETACH ) { /* MessageBox(0, "DllMain DLL_THREAD_DETACH ", 0, 0) */ ;}
 // else                                      {    MessageBox(0, "DllMain hmmmm???"          , 0, 0)    ;}
 
-   if (fdwReason == DLL_PROCESS_ATTACH) {
+   if (fdwReason == DLL_PROCESS_ATTACH) { // {
       TQ84_DEBUG("fdwReason == DLL_PROCESS_ATTACH");
       curProcess = GetCurrentProcess();
 #ifdef USE_SEARCH
@@ -561,9 +563,9 @@ BOOL WINAPI DllMain( // {
       func_addrs[1] = (address) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcRound" );
 #endif
 
-   }
+   } // }
 
-   if (fdwReason == DLL_PROCESS_DETACH) {
+   if (fdwReason == DLL_PROCESS_DETACH) { // {
       TQ84_DEBUG("DLL_PROCESS_DETACH");
 #ifdef USE_SEARCH
 #else
@@ -572,15 +574,15 @@ BOOL WINAPI DllMain( // {
         replaceInstruction(func_addrs[i], old_instr[i]);
       }
 #endif
-   }
+   } // }
 
-   if (fdwReason == DLL_THREAD_DETACH) {
-      TQ84_DEBUG("DLL_THREAD_DETACH");
-   }
+   if (fdwReason == DLL_THREAD_DETACH) { // {
+//    TQ84_DEBUG("DLL_THREAD_DETACH");
+   } // }
 
-   if (fdwReason == DLL_THREAD_ATTACH) {
-      TQ84_DEBUG("DLL_THREAD_ATTACH");
-   }
+   if (fdwReason == DLL_THREAD_ATTACH) { // {
+//    TQ84_DEBUG("DLL_THREAD_ATTACH");
+   } // }
 
    return TRUE;
 
