@@ -41,6 +41,8 @@ typedef LPVOID address;
 
 HANDLE curProcess;
 
+static int debug_is_open = 0;
+
 instruction replaceInstruction(address addr, instruction instr) { // {
     TQ84_DEBUG_INDENT_T("replaceInstruction, addr=%d, byte = %u", addr, instr);
 
@@ -270,7 +272,7 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) { // {
 
        // TQ84_DEBUG("Going to call SetThreadContext");
 
-          tq84_debug_dedent();
+          TQ84_DEBUG_DEDENT();
           SetThreadContext(GetCurrentThread(), exPtr->ContextRecord);
        } // }
  // }
@@ -479,6 +481,12 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) { // {
 
 __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBack_) { // {
 
+    if (!debug_is_open) {
+       TQ84_DEBUG_OPEN("c:\\temp\\vba-dbg.out", "w");
+       debug_is_open ++;
+
+    }
+
     TQ84_DEBUG_INDENT_T("VBAInternalsInit");
 
     int i, res;
@@ -537,16 +545,15 @@ BOOL WINAPI DllMain( // {
 ) {
 
    int i;
-   static int debug_is_open = 0;
 
-   if (!debug_is_open) {
-      tq84_debug_open("c:\\temp\\dbg.vba", "w");
-      debug_is_open ++;
-   }
+// if (!debug_is_open) {
+//    TQ84_DEBUG_OPEN("c:\\temp\\dbg.vba", "w");
+//    debug_is_open ++;
+// }
 
-   TQ84_DEBUG_INDENT_T("DllMain");
+// TQ84_DEBUG_INDENT_T("DllMain");
 
-   TQ84_DEBUG("EXCEPTION_BREAKPOINT = %x, EXCEPTION_SINGLE_STEP = %x", EXCEPTION_BREAKPOINT, EXCEPTION_SINGLE_STEP);
+// TQ84_DEBUG("EXCEPTION_BREAKPOINT = %x, EXCEPTION_SINGLE_STEP = %x", EXCEPTION_BREAKPOINT, EXCEPTION_SINGLE_STEP);
 
 // if      (fdwReason == DLL_PROCESS_ATTACH) {    MessageBox(0, "DllMain DLL_PROCESS_ATTACH", 0, 0)    ;}
 // else if (fdwReason == DLL_PROCESS_DETACH) {    MessageBox(0, "DllMain DLL_PROCESS_DETACH", 0, 0)    ;}
@@ -555,7 +562,7 @@ BOOL WINAPI DllMain( // {
 // else                                      {    MessageBox(0, "DllMain hmmmm???"          , 0, 0)    ;}
 
    if (fdwReason == DLL_PROCESS_ATTACH) { // {
-      TQ84_DEBUG("fdwReason == DLL_PROCESS_ATTACH");
+ //   TQ84_DEBUG("fdwReason == DLL_PROCESS_ATTACH");
       curProcess = GetCurrentProcess();
 #ifdef USE_SEARCH
 #else
@@ -566,7 +573,7 @@ BOOL WINAPI DllMain( // {
    } // }
 
    if (fdwReason == DLL_PROCESS_DETACH) { // {
-      TQ84_DEBUG("DLL_PROCESS_DETACH");
+//    TQ84_DEBUG("DLL_PROCESS_DETACH");
 #ifdef USE_SEARCH
 #else
       for (i=0; i<NOF_BREAKPOINTS; i++) {
