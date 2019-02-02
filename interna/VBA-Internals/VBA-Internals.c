@@ -41,7 +41,7 @@ typedef LPVOID address;
 
 HANDLE curProcess;
 
-static int debug_is_open = 0;
+static int initialized = 0;
 
 instruction replaceInstruction(address addr, instruction instr) { // {
     TQ84_DEBUG_INDENT_T("replaceInstruction, addr=%d, byte = %u", addr, instr);
@@ -195,6 +195,9 @@ int   nrLastFuncBreakpointHit;
    typedef void (CALLBACK *addrCallBack_t)(BSTR);
 addrCallBack_t addrCallBack;
 
+void WinAPI_hook_GetModuleHandleA(LPCSTR lpModuleName) {
+
+}
 
 void callCallback(char* txt) { // {
      TQ84_DEBUG_INDENT_T("callCallback, txt = %s", txt);
@@ -481,10 +484,10 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) { // {
 
 __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBack_) { // {
 
-    if (!debug_is_open) {
+    if (!initialized) {
        TQ84_DEBUG_OPEN("c:\\temp\\vba-dbg.out", "w");
-       debug_is_open ++;
-
+       initialized ++;
+       curProcess = GetCurrentProcess();
     }
 
     TQ84_DEBUG_INDENT_T("VBAInternalsInit");
@@ -521,7 +524,6 @@ __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBac
      // insert the breakpoint instruction. Otherwise, the modification of
      // the (read-only) code segment would cause an exception.
      //
-
         DWORD oldProtection;
         VirtualProtect(func_addrs[i], 1, PAGE_EXECUTE_READWRITE, &oldProtection);
 
@@ -546,9 +548,9 @@ BOOL WINAPI DllMain( // {
 
    int i;
 
-// if (!debug_is_open) {
+// if (!initialized) {
 //    TQ84_DEBUG_OPEN("c:\\temp\\dbg.vba", "w");
-//    debug_is_open ++;
+//    initialized ++;
 // }
 
 // TQ84_DEBUG_INDENT_T("DllMain");
@@ -563,7 +565,7 @@ BOOL WINAPI DllMain( // {
 
    if (fdwReason == DLL_PROCESS_ATTACH) { // {
  //   TQ84_DEBUG("fdwReason == DLL_PROCESS_ATTACH");
-      curProcess = GetCurrentProcess();
+ //   curProcess = GetCurrentProcess();
 #ifdef USE_SEARCH
 #else
       func_addrs[0] = (address) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcMsgBox");
@@ -573,6 +575,7 @@ BOOL WINAPI DllMain( // {
    } // }
 
    if (fdwReason == DLL_PROCESS_DETACH) { // {
+     msg_2("DLL_PROCESS_DETACH")
 //    TQ84_DEBUG("DLL_PROCESS_DETACH");
 #ifdef USE_SEARCH
 #else
