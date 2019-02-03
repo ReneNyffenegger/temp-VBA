@@ -2,12 +2,14 @@
 //  cl /LD VBA-Internals.c    user32.lib OleAut32.lib /FeVBA-Internals.dll /link /def:VBA-Internals.def
 //
 //  gcc -c VBA-Internals.c
+//  gcc -shared             *.o -lOleAut32 -o VBA-Internals.dll -Wl,--add-stdcall-alias
 //  gcc -shared VBA-Internals.o -lOleAut32 -o VBA-Internals.dll -Wl,--add-stdcall-alias
 //
 //  TODO
 //    Detouring: https://reverseengineering.stackexchange.com/a/13694
 
 #include <windows.h>
+#include <imagehlp.h>
 #include <stdlib.h>
 
 // #include "vbObject.h"
@@ -30,7 +32,170 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr);
 
 #define TQ84_DEBUG_ENABLED
 #define TQ84_DEBUG_TO_FILE
+#define TQ84_DEBUG_FILENAME_WIDTH "20"
+#define TQ84_DEBUG_FUNCNAME_WIDTH "50"
 #include "c:\lib\tq84-c-debug\tq84_debug.c"
+
+#include "C:\temp\mhook\mhook-lib\mhook.h"
+
+// --------------------------------------------------------------------
+
+
+typedef BOOL      (WINAPI *fn_ChooseColorA           )(LPCHOOSECOLOR lpcc                                                                                   ); fn_ChooseColorA            orig_ChooseColorA       ;
+typedef BOOL      (WINAPI *fn_GetFileVersionInfoA    )(LPCSTR lptstrFilename, DWORD dwHandle, DWORD  dwLen, LPVOID lpData                                   ); fn_GetFileVersionInfoA     orig_GetFileVersionInfoA;
+typedef DWORD     (WINAPI *fn_GetFileVersionInfoSizeA)(LPCSTR lptstrFilename, LPDWORD lpdwHandle                                                            ); fn_GetFileVersionInfoSizeA orig_GetFileVersionInfoSizeA;
+typedef BOOL      (WINAPI *fn_MapAndLoad             )(PCSTR ImageName,PCSTR DllPath,PLOADED_IMAGE LoadedImage,WINBOOL DotDll,WINBOOL ReadOnly              ); fn_MapAndLoad              orig_MapAndLoad             ;
+
+typedef LSTATUS   (WINAPI *fn_RegCloseKey            )( HKEY hKey                                                                                           ); fn_RegCloseKey             orig_RegCloseKey         ;
+typedef LSTATUS   (WINAPI *fn_RegOpenKeyExW          )( HKEY hKey, LPCWSTR lpSubKey, DWORD   ulOptions, REGSAM  samDesired, PHKEY   phkResult)               ; fn_RegOpenKeyExW           orig_RegOpenKeyExW       ;
+typedef LSTATUS   (WINAPI *fn_RegOpenKeyExA          )( HKEY hKey, LPCSTR lpSubKey, DWORD  ulOptions, REGSAM samDesired, PHKEY  phkResult)                   ; fn_RegOpenKeyExA           orig_RegOpenKeyExA       ;
+typedef LSTATUS   (WINAPI *fn_RegQueryValueExA       )( HKEY hKey, LPCSTR  lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE  lpData, LPDWORD lpcbData); fn_RegQueryValueExA        orig_RegQueryValueExA    ;
+typedef LSTATUS   (WINAPI *fn_RegQueryValueExW       )( HKEY hKey, LPCWSTR lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE  lpData, LPDWORD lpcbData); fn_RegQueryValueExW        orig_RegQueryValueExW    ;
+typedef LSTATUS   (WINAPI *fn_RegSetValueExA         )( HKEY hKey, LPCSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData       ); fn_RegSetValueExA          orig_RegSetValueExA      ;
+
+typedef HINSTANCE (WINAPI *fn_ShellExecuteA          )( HWND hwnd, LPCSTR lpOperation, LPCSTR lpFile, LPCSTR lpParameters, LPCSTR lpDirectory, INT nShowCmd ); fn_ShellExecuteA           orig_ShellExecuteA       ;
+typedef BOOL      (WINAPI *fn_ShellExecuteExW        )( SHELLEXECUTEINFOW *pExecInfo                                                                        ); fn_ShellExecuteExW         orig_ShellExecuteExW     ;
+
+
+typedef BOOL      (WINAPI *fn_UnMapAndLoad           )(PLOADED_IMAGE LoadedImage                                                                            ); fn_UnMapAndLoad            orig_UnMapAndLoad           ;
+typedef BOOL      (WINAPI *fn_VerQueryValueA         )(LPCVOID pBlock, LPCSTR lpSubBlock, LPVOID *lplpBuffer, PUINT puLen                                   ); fn_VerQueryValueA          orig_VerQueryValueA         ;
+
+
+
+typedef void* (CALLBACK *fn_rtcErrObj          )()                                                                        ; fn_rtcErrObj              orig_rtcErrObj          ;
+
+
+BOOL WINAPI hook_ChooseColorA(LPCHOOSECOLOR lpcc) {
+  TQ84_DEBUG("ChooseColor");
+  return orig_ChooseColorA(lpcc);
+}
+
+BOOL WINAPI hook_GetFileVersionInfoA(LPCSTR lptstrFilename, DWORD dwHandle, DWORD dwLen, LPVOID lpData) {
+  TQ84_DEBUG("GetFileVersionInfo, lptstrFilename = %s, dwHandle = %d, dwLen = %d", lptstrFilename, dwHandle, dwLen);
+  return orig_GetFileVersionInfoA(lptstrFilename, dwHandle, dwLen, lpData);
+}
+
+DWORD WINAPI hook_GetFileVersionInfoSizeA(LPCSTR lptstrFilename, LPDWORD lpdwHandle) {
+  TQ84_DEBUG_INDENT_T("GetFileVersionInfoSizeA, lptstrFilename = %s", lptstrFilename);
+  DWORD ret = orig_GetFileVersionInfoSizeA(lptstrFilename, lpdwHandle);
+  TQ84_DEBUG("ret = %d", ret);
+  return ret;
+}
+
+BOOL WINAPI hook_MapAndLoad(PCSTR ImageName, PCSTR DllPath, PLOADED_IMAGE LoadedImage, WINBOOL DotDll, WINBOOL ReadOnly) {
+  TQ84_DEBUG_INDENT_T("MapAndLoad, ImageName = %s, DllPath = %s", ImageName, DllPath);
+  int ret = orig_MapAndLoad(ImageName, DllPath, LoadedImage, DotDll, ReadOnly);
+  TQ84_DEBUG("ret = %d", ret);
+
+  return ret;
+}
+
+
+LSTATUS WINAPI hook_RegCloseKey      ( HKEY hKey){
+  TQ84_DEBUG("RegCloseKey, hKey = %d", hKey);
+  return orig_RegCloseKey(hKey);
+}
+LSTATUS WINAPI hook_RegOpenKeyExW    ( HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult)               {
+
+  char x[500];
+  wcstombs(x, lpSubKey, 499);
+
+  TQ84_DEBUG_INDENT_T("RegOpenKeyExW, hKey = %d, lpSubKey = %s, ulOptions = %d, samDesired = %d", hKey, x, ulOptions, samDesired);
+  if (hKey == HKEY_CLASSES_ROOT) {
+     TQ84_DEBUG("HKEY_CLASSES_ROOT");
+  }
+  else if (hKey == HKEY_CURRENT_CONFIG ) {
+     TQ84_DEBUG("HKEY_CURRENT_CONFIG");
+  }
+  else if (hKey == HKEY_CURRENT_USER  ) {
+     TQ84_DEBUG("HKEY_CURRENT_USER");
+  }
+  else if (hKey == HKEY_LOCAL_MACHINE   ) {
+     TQ84_DEBUG("HKEY_LOCAL_MACHINE");
+  }
+  else if (hKey == HKEY_USERS) {
+     TQ84_DEBUG("HKEY_USERS");
+  }
+
+//TQ84_DEBUG_INDENT_T("RegOpenKeyExW, lpSubKey = %S", lpSubKey);
+  LSTATUS ret = orig_RegOpenKeyExW(hKey, lpSubKey, ulOptions, samDesired, phkResult);
+  TQ84_DEBUG("hkeyResult = %d", *phkResult);
+  return ret;
+}
+LSTATUS WINAPI hook_RegOpenKeyExA    ( HKEY hKey, LPCSTR lpSubKey, DWORD  ulOptions, REGSAM samDesired, PHKEY  phkResult)                   {
+  TQ84_DEBUG_INDENT_T("RegOpenKeyExA, hKey = %d, lpSubKey = %s, ulOptions = %d, samDesired = %d", hKey, lpSubKey, ulOptions, samDesired);
+
+  if (hKey == HKEY_CLASSES_ROOT) {
+     TQ84_DEBUG("HKEY_CLASSES_ROOT");
+  }
+  else if (hKey == HKEY_CURRENT_CONFIG ) {
+     TQ84_DEBUG("HKEY_CURRENT_CONFIG");
+  }
+  else if (hKey == HKEY_CURRENT_USER  ) {
+     TQ84_DEBUG("HKEY_CURRENT_USER");
+  }
+  else if (hKey == HKEY_LOCAL_MACHINE   ) {
+     TQ84_DEBUG("HKEY_LOCAL_MACHINE");
+  }
+  else if (hKey == HKEY_USERS) {
+     TQ84_DEBUG("HKEY_USERS");
+  }
+
+//TQ84_DEBUG_INDENT_T("RegOpenKeyExA");
+//TQ84_DEBUG("lpSubKey = %s", lpSubKey);
+  LSTATUS ret = orig_RegOpenKeyExA(hKey, lpSubKey, ulOptions, samDesired, phkResult);
+  TQ84_DEBUG("hkeyResult = %d", *phkResult);
+  return ret;
+}
+LSTATUS WINAPI hook_RegQueryValueExA ( HKEY hKey, LPCSTR  lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE  lpData, LPDWORD lpcbData){
+  TQ84_DEBUG_INDENT_T("RegQueryValueExA, lpValueName = %s", lpValueName);
+  return orig_RegQueryValueExA(hKey, lpValueName, lpReserved, lpType, lpData, lpcbData);
+}
+LSTATUS WINAPI hook_RegQueryValueExW ( HKEY hKey, LPCWSTR lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE  lpData, LPDWORD lpcbData){
+  char x[500];
+  wcstombs(x, lpValueName, 499);
+  TQ84_DEBUG_INDENT_T("RegQueryValueExW hKey = %d, lpValueName = %s", hKey, lpValueName);
+  return orig_RegQueryValueExW(hKey, lpValueName, lpReserved, lpType, lpData, lpcbData);
+}
+LSTATUS WINAPI hook_RegSetValueExA   ( HKEY hKey, LPCSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData       ){
+  TQ84_DEBUG_INDENT_T("RegSetValueExA, hKey = %d, lpValueName = %s", hKey, lpValueName);
+  return orig_RegSetValueExA(hKey, lpValueName, Reserved, dwType, lpData, cbData);
+}
+
+HINSTANCE WINAPI hook_ShellExecuteA( HWND hwnd, LPCSTR lpOperation, LPCSTR lpFile, LPCSTR lpParameters, LPCSTR lpDirectory, INT nShowCmd ) {
+  TQ84_DEBUG_INDENT_T("ShellExecuteA, lpOperation = %s, lpFile = %s, lpParameters = %s, lpDirectory = %s, nShowCmd = %d", lpOperation, lpFile, lpParameters, lpDirectory, nShowCmd);  
+  return orig_ShellExecuteA(hwnd, lpOperation, lpFile, lpParameters, lpDirectory, nShowCmd);
+}
+
+BOOL WINAPI hook_ShellExecuteExW(SHELLEXECUTEINFOW *pExecInfo) {
+  TQ84_DEBUG_INDENT_T("ShellExecuteExW");
+  return orig_ShellExecuteExW(pExecInfo);
+}
+
+BOOL WINAPI hook_UnMapAndLoad(PLOADED_IMAGE LoadedImage) {
+  TQ84_DEBUG("UnMapAndLoad");
+  return orig_UnMapAndLoad(LoadedImage);
+}
+
+
+BOOL WINAPI hook_VerQueryValueA(LPCVOID pBlock, LPCSTR lpSubBlock, LPVOID *lplpBuffer, PUINT puLen) {
+  TQ84_DEBUG("VerQueryValue, lpSubBlock = %s, puLen = %d", lpSubBlock, puLen);
+  return orig_VerQueryValueA(pBlock, lpSubBlock, lplpBuffer, puLen);
+}
+
+void* CALLBACK hook_rtcErrObj() {
+  TQ84_DEBUG_INDENT_T("hook_rtcErrObj");
+
+
+  TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
+
+  void* ret = orig_rtcErrObj();
+
+  TQ84_DEBUG("returning ret = %d", ret);
+
+  return ret;
+}
+
 
 
 // --------------------------------------------------------------------
@@ -146,6 +311,8 @@ __declspec(dllexport) void __stdcall addBreakpoint(address addr, char* name, cha
 } // }
 
 __declspec(dllexport) void __stdcall addDllFunctionBreakpoint(char* module, char* funcName, char* format) { // {
+
+  return;   /// HERE HERE HERE ////
 
      address addr;
      HMODULE mod;
@@ -482,13 +649,62 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) { // {
     return EXCEPTION_CONTINUE_SEARCH;
 } // }
 
+#define TQ84_HOOK_FUNCTION(API_name, module_name )                                                     \
+     orig_ ## API_name = (fn_ ## API_name) GetProcAddress(GetModuleHandle( #module_name ), #API_name); \
+     if (! orig_ ## API_name) {                                                                            \
+       MessageBox(0, "GetProcAddress: " #API_name ", " #module_name, 0, 0);                                \
+     }                                                                                                     \
+     else {                                                                                                \
+       if (! Mhook_SetHook((PVOID*) &orig_ ## API_name, (PVOID) hook_ ## API_name )) {                     \
+         MessageBox(0, "Sorry, could not hook " #API_name, 0, 0);                                          \
+       }                                                                                                   \
+     }
+
+
 __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBack_) { // {
 
     if (!initialized) {
        TQ84_DEBUG_OPEN("c:\\temp\\vba-dbg.out", "w");
        initialized ++;
        curProcess = GetCurrentProcess();
+
+     { TQ84_DEBUG_INDENT_T("Initializing hooks");
+
+        TQ84_HOOK_FUNCTION(rtcErrObj                , VBE7.dll    )
+        TQ84_HOOK_FUNCTION(ChooseColorA             , Comdlg32.dll)
+        TQ84_HOOK_FUNCTION(GetFileVersionInfoA      , version.dll )
+        TQ84_HOOK_FUNCTION(GetFileVersionInfoSizeA  , version.dll )
+        TQ84_HOOK_FUNCTION(MapAndLoad               , Imagehlp.dll)
+
+        TQ84_HOOK_FUNCTION(RegCloseKey              , Advapi32.dll )
+        TQ84_HOOK_FUNCTION(RegOpenKeyExW            , Advapi32.dll )
+        TQ84_HOOK_FUNCTION(RegOpenKeyExA            , Advapi32.dll )
+        TQ84_HOOK_FUNCTION(RegQueryValueExA         , Advapi32.dll )
+        TQ84_HOOK_FUNCTION(RegQueryValueExW         , Advapi32.dll )
+        TQ84_HOOK_FUNCTION(RegSetValueExA           , Advapi32.dll )
+
+        TQ84_HOOK_FUNCTION(ShellExecuteA            , Shell32.dll  )
+        TQ84_HOOK_FUNCTION(ShellExecuteExW          , Shell32.dll  )
+
+        TQ84_HOOK_FUNCTION(UnMapAndLoad             , Imagehlp.dll)
+//      TQ84_HOOK_FUNCTION(VerQueryValue            , Api-ms-win-core-version-l1-1-0.dll)
+        TQ84_HOOK_FUNCTION(VerQueryValueA           , version.dll)
+
+//     orig_rtcErrObj = (fn_rtcErrObj) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcErrObj");
+//     TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
+
+//     if (! Mhook_SetHook((PVOID*) &orig_rtcErrObj, (PVOID) hook_rtcErrObj)) {
+//       TQ84_DEBUG("Sorry, could not hook rtcErrObj");
+//     }
+//     TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
+
+
+
+     }
+
     }
+
+return; /* HERE HERE HERE */
 
     TQ84_DEBUG_INDENT_T("VBAInternalsInit");
 
