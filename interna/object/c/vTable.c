@@ -109,6 +109,16 @@ struct vb_object {
 };
 
 
+// Is this a better layout?
+//
+// typedef struct {
+// 
+//   IUnknown_vTable  *vTable_IUnknown;
+//   unsigned long     refCount;
+//   IDispatch_vTable *vTable_IDispatch;
+//   
+// } vbObject;
+
 
 //__declspec(dllexport) __stdcall void ChangeVTable(struct IUnknown_vTable** addrObj)
 __declspec(dllexport) __stdcall void ChangeVTable(struct vb_object* addrObj)
