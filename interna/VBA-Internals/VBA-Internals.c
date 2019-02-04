@@ -53,12 +53,13 @@ breakpoint;
 
 int compareBreakpoints(const breakpoint *const f1, const breakpoint *const f2) {
   char txt[200];
-  wsprintf(txt, "Comparing f1 (%d, addr: %d, %s) with f2 (%d, addr: %d, %s)", f1, f1->addr, f1->name, f2, f2->addr, f2->name);
+  wsprintf(txt, "Comparing f1 (%d, addr: %d, %s) with f2 (%d, addr: %d, %s)", f1, (long) f1->addr, f1->name, f2, (long) f2->addr, f2->name);
   msg_2(txt);
   return ((long)(f1->addr)) - ((long)(f2->addr));
 }
 
-breakpoint *breakpointTreeRoot = 0;
+// was: breakpoint *breakpointTreeRoot = 0 ...
+void *breakpointTreeRoot = 0;
 
 __declspec(dllexport) void __stdcall addBreakpoint(address addr, char* name) {
 
