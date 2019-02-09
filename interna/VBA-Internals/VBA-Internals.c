@@ -9,6 +9,7 @@
 //    Detouring: https://reverseengineering.stackexchange.com/a/13694
 
 #include <windows.h>
+#include <Shlobj.h>
 #include <imagehlp.h>
 #include <stdlib.h>
 
@@ -56,6 +57,7 @@ typedef LSTATUS   (WINAPI *fn_RegSetValueExA         )( HKEY hKey, LPCSTR lpValu
 typedef HINSTANCE (WINAPI *fn_ShellExecuteA          )( HWND hwnd, LPCSTR lpOperation, LPCSTR lpFile, LPCSTR lpParameters, LPCSTR lpDirectory, INT nShowCmd ); fn_ShellExecuteA           orig_ShellExecuteA       ;
 typedef BOOL      (WINAPI *fn_ShellExecuteExW        )( SHELLEXECUTEINFOW *pExecInfo                                                                        ); fn_ShellExecuteExW         orig_ShellExecuteExW     ;
 
+// typedef HINSTANCE (WINAPI *fn_SHGetFolderPathW       )( HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPWSTR pszPath
 
 typedef BOOL      (WINAPI *fn_UnMapAndLoad           )(PLOADED_IMAGE LoadedImage                                                                            ); fn_UnMapAndLoad            orig_UnMapAndLoad           ;
 typedef BOOL      (WINAPI *fn_VerQueryValueA         )(LPCVOID pBlock, LPCSTR lpSubBlock, LPVOID *lplpBuffer, PUINT puLen                                   ); fn_VerQueryValueA          orig_VerQueryValueA         ;
