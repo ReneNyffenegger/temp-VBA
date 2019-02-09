@@ -70,4 +70,6 @@ void iterateOverFuncsInDll(char *imageName, char *path, fnFuncInDll callback) {
 
   }
 
+  UnMapAndLoad(&img);
+
 }
