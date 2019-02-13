@@ -26,5 +26,6 @@ void writeToFile(const char *text) {
      DWORD nofBytesWritten;
 
      WriteFile(msgFile, text, lstrlenA(text), &nofBytesWritten, NULL);
+     FlushFileBuffers(msgFile);
 
 }
