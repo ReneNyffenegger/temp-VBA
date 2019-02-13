@@ -1,8 +1,15 @@
 #include "msg.h"
 
-HANDLE createNewOutputFile(LPCTSTR fileName) {
+static HANDLE msgFile = 0;
 
-  HANDLE ret = CreateFileA(
+void createNewOutputFile(LPCTSTR fileName) {
+
+  if (msgFile) {
+    writeToFile("File already opened");
+    return;
+  }
+
+  msgFile = CreateFileA(
        fileName                                       , // lpFileName,
        GENERIC_WRITE                                  , // dwDesiredAccess,
        FILE_SHARE_READ                                , // dwShareMode,
@@ -14,10 +21,10 @@ HANDLE createNewOutputFile(LPCTSTR fileName) {
 
 }
 
-void writeToFile(HANDLE f, char *text) {
+void writeToFile(const char *text) {
 
      DWORD nofBytesWritten;
 
-     WriteFile(f, text, lstrlenA(text), &nofBytesWritten, NULL);
+     WriteFile(msgFile, text, lstrlenA(text), &nofBytesWritten, NULL);
 
 }

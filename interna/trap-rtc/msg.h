@@ -1,5 +1,5 @@
 #include <windows.h>
 
-HANDLE createNewOutputFile(LPCTSTR fileName);
+void createNewOutputFile(LPCTSTR fileName);
 
-void writeToFile(HANDLE f, char *text);
+void writeToFile(const char *text);
