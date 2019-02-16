@@ -822,6 +822,31 @@ __declspec(dllexport) void __stdcall dbg(char *txt) { // {
 } // }
 
 
+funcPtr_IUnknown_QueryInterface m_loader_queryInterface;
+
+HRESULT __stdcall QueryInterface(void* self, const IID* iid, void** pObj) {
+  TQ84_DEBUG_INDENT_T("QueryInterface, self = %d", self);
+
+  TQ84_DEBUG("m_loader_queryInterface = %d", m_loader_queryInterface);
+
+  LPOLESTR iid_string;
+  StringFromIID(iid, &iid_string);
+
+  char x[500];
+  wcstombs(x, iid_string, 499);
+  TQ84_DEBUG("iid = %s", x);
+
+  CoTaskMemFree(iid_string);
+
+
+  HRESULT ret = m_loader_queryInterface(self, iid, pObj);
+
+  TQ84_DEBUG("ret = %d", ret);
+  TQ84_DEBUG("pObj = %d", *pObj);
+
+  return ret;
+}
+
 __declspec(dllexport) void __stdcall addrOf_m_Loader(void *addr) { // {
     TQ84_DEBUG_INDENT_T("addrOf_m_Loader = %d", addr);
 
@@ -829,8 +854,61 @@ __declspec(dllexport) void __stdcall addrOf_m_Loader(void *addr) { // {
 
     m_loader = (VCOMInitializerStruct*) addr;
 
-    TQ84_DEBUG("m_loader.kernel32Handle = %d, GetModuleHandle() = %d", m_loader->kernel32Handle, GetModuleHandle("kernel32.dll"));
-  
+    HANDLE h = GetModuleHandle("kernel32.dll");
+
+    TQ84_DEBUG("m_loader.kernel32Handle = %d, GetModuleHandle() = %d", m_loader->kernel32Handle, h);
+
+    if (h != m_loader->kernel32Handle) {
+      MessageBox(0, "m_loader.kernel32Handle!", 0, 0);
+    }
+
+    if (m_loader->vTablePtr != m_loader) {
+      MessageBox(0, "m_loader.vTablePtr!", 0, 0);
+    }
+
+
+
+    TQ84_DEBUG("m_loader->iDispatch.QueryInterface       = %d", m_loader->iDispatch.QueryInterface);
+    TQ84_DEBUG("m_loader->iDispatch.AddRef               = %d", m_loader->iDispatch.AddRef        );
+    TQ84_DEBUG("m_loader->iDispatch.Release              = %d", m_loader->iDispatch.Release       );
+    TQ84_DEBUG("m_loader->iDispatch.GetTypeInfoCount     = %d", m_loader->iDispatch.GetTypeInfoCount );
+    TQ84_DEBUG("m_loader->iDispatch.GetTypeInfo          = %d", m_loader->iDispatch.GetTypeInfo      );
+    TQ84_DEBUG("m_loader->iDispatch.GetIDsOfNames        = %d", m_loader->iDispatch.GetIDsOfNames );
+    TQ84_DEBUG("m_loader->iDispatch.Invoke               = %d", m_loader->iDispatch.Invoke        );
+
+//  TQ84_DEBUG("1st element (* ) in m_loader: %d", *  ((int* ) addr));
+//  TQ84_DEBUG("1st element (**) in m_loader: %d", ** ((int**) addr));
+
+    TQ84_DEBUG("nativeCode (at %d) = %s", m_loader->nativeCode, m_loader->nativeCode);
+    TQ84_DEBUG("loaderMem  = %d", m_loader->loaderMem);
+    TQ84_DEBUG("vTablePtr  = %d", m_loader->vTablePtr  );
+    TQ84_DEBUG("rootObject = %d", m_loader->rootObject  );
+    TQ84_DEBUG("classFactory = %d", m_loader->classFactory  );
+
+    TQ84_DEBUG("rootObject->… QueryInterface = %d", m_loader->rootObject->vtbl->QueryInterface);
+//  TQ84_DEBUG("& rootObject->QueryInterface = %d", & (m_loader->rootObject->QueryInterface));
+ 
+    if (m_loader->rootObject->vtbl != m_loader->vTablePtr) {
+       MessageBox(0, "m_loader->rootObject->vtbl", 0, 0);
+    }
+
+    if (& (m_loader->rootObject->vtbl) != m_loader->rootObject) {
+       MessageBox(0, "& (m_loader->rootObject->QueryInterface)", 0, 0);
+
+    }
+
+    TQ84_DEBUG("Trying to hook");
+    m_loader_queryInterface = m_loader->rootObject->vtbl->QueryInterface;
+    if (! Mhook_SetHook((PVOID*) &m_loader_queryInterface, QueryInterface)) {                     \
+         MessageBox(0, "Sorry, could not hook", 0, 0);                                 \
+     }                                                                                            \
+
+//  m_loader_queryInterface                    = m_loader->rootObject->vtbl->QueryInterface;
+//  m_loader->rootObject->vtbl->QueryInterface = QueryInterface;
+
+
+
+    TQ84_DEBUG("Returning");
 
 } // }
 

@@ -1,6 +1,6 @@
 
 VBA-Internals.dll: VBA-Internals.o mhook.o disasm.o disasm_x86.o cpu.o 
-	gcc -shared VBA-Internals.o mhook.o disasm.o disasm_x86.o cpu.o -lOleAut32 -o VBA-Internals.dll -Wl,--add-stdcall-alias
+	gcc -shared VBA-Internals.o mhook.o disasm.o disasm_x86.o cpu.o -lOle32 -lOleAut32 -o VBA-Internals.dll -Wl,--add-stdcall-alias
 
 VBA-Internals.o: VBA-Internals.c
 	gcc -c VBA-Internals.c
