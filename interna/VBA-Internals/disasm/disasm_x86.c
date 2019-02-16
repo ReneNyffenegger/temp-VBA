@@ -32,7 +32,15 @@
 // Internal macros
 ////////////////////////////////////////////////////////////////////////
 
-#define VIRTUAL_ADDRESS ((U64)Instruction->Address + Instruction->VirtualAddressDelta)
+#ifdef _WIN64
+  #define TQ84_ADDRESS_SIZE U64
+#else
+  #define TQ84_ADDRESS_SIZE U32
+#endif
+
+
+// #define VIRTUAL_ADDRESS ((U64)Instruction->Address + Instruction->VirtualAddressDelta)
+#define VIRTUAL_ADDRESS ((TQ84_ADDRESS_SIZE)Instruction->Address + Instruction->VirtualAddressDelta)
 
 #define AMD64_DIFF (AMD64_8BIT_OFFSET-X86_8BIT_OFFSET)
 #define IS_AMD64() (INS_ARCH_TYPE(Instruction) == ARCH_X64)
@@ -149,7 +157,8 @@
             case SEG_FS: \
             case SEG_GS: \
                 assert(!X86Instruction->HasSelector); \
-                Operand->TargetAddress = (U64)GetAbsoluteAddressFromSegment((BYTE)X86Instruction->Segment, (DWORD)X86Instruction->Displacement); \
+       /*       Operand->TargetAddress = (U64)GetAbsoluteAddressFromSegment((BYTE)X86Instruction->Segment, (DWORD)X86Instruction->Displacement); */ \
+                Operand->TargetAddress = (TQ84_ADDRESS_SIZE)GetAbsoluteAddressFromSegment((BYTE)X86Instruction->Segment, (DWORD)X86Instruction->Displacement);  \
                 break; \
             default: \
                 assert(0); /* shouldn't be possible */ \
@@ -2128,8 +2137,10 @@ HasSpecialExtension:
         }
 
         if (!Instruction->AnomalyOccurred &&
-            Operand1->TargetAddress >= (U64)Instruction->Address &&
-            Operand1->TargetAddress < (U64)Instruction->Address + Instruction->Length)
+//          Operand1->TargetAddress >= (U64)Instruction->Address &&
+//          Operand1->TargetAddress < (U64)Instruction->Address + Instruction->Length)
+            Operand1->TargetAddress >= (TQ84_ADDRESS_SIZE)Instruction->Address &&
+            Operand1->TargetAddress < (TQ84_ADDRESS_SIZE)Instruction->Address + Instruction->Length)
         {
             if (!SuppressErrors) printf("[0x%08I64X] ANOMALY: branch into the middle of an instruction\n", VIRTUAL_ADDRESS);
             Instruction->AnomalyOccurred = TRUE;
@@ -2235,7 +2246,8 @@ HasSpecialExtension:
                     assert(!Instruction->CodeBranch.AddressOffset);
                     Instruction->CodeBranch.Count = 2;
                     Instruction->CodeBranch.Addresses[0] = Operand1->TargetAddress;
-                    Instruction->CodeBranch.Addresses[1] = (U64)Instruction->Address + Instruction->Length;
+//                  Instruction->CodeBranch.Addresses[1] = (U64)Instruction->Address + Instruction->Length;
+                    Instruction->CodeBranch.Addresses[1] = (TQ84_ADDRESS_SIZE)Instruction->Address + Instruction->Length;
                     Instruction->CodeBranch.Operand = Operand1;
                 }
                 break;
@@ -2251,7 +2263,8 @@ HasSpecialExtension:
                     assert(!Instruction->CodeBranch.AddressOffset);
                     Instruction->CodeBranch.Count = 2;
                     Instruction->CodeBranch.Addresses[0] = Operand1->TargetAddress;
-                    Instruction->CodeBranch.Addresses[1] = (U64)Instruction->Address + Instruction->Length;
+//                  Instruction->CodeBranch.Addresses[1] = (U64)Instruction->Address + Instruction->Length;
+                    Instruction->CodeBranch.Addresses[1] = (TQ84_ADDRESS_SIZE)Instruction->Address + Instruction->Length;
                     Instruction->CodeBranch.Operand = Operand1;
                 }
                 break;
@@ -3565,7 +3578,8 @@ INTERNAL U8 *SetOperands(INSTRUCTION *Instruction, U8 *Address, U32 Flags)
                 if (!Decode) continue;
 
                 assert((Operand->Flags & OP_EXEC) && (Instruction->Groups & ITYPE_EXEC));
-                Operand->TargetAddress = ApplyDisplacement((U64)Address, Instruction);
+//              Operand->TargetAddress = ApplyDisplacement((U64)Address, Instruction);
+                Operand->TargetAddress = ApplyDisplacement((TQ84_ADDRESS_SIZE)Address, Instruction);
                 X86Instruction->Relative = TRUE; 
                 X86_SET_ADDR();
                 SANITY_CHECK_SEGMENT_OVERRIDE();
@@ -4336,7 +4350,8 @@ INTERNAL U8 *SetModRM32(INSTRUCTION *Instruction, U8 *Address, INSTRUCTION_OPERA
                 }
             }
 
-            Operand->TargetAddress = ApplyDisplacement((U64)Address + ImmediateSize, Instruction);
+//          Operand->TargetAddress = ApplyDisplacement((U64)Address + ImmediateSize, Instruction);
+            Operand->TargetAddress = ApplyDisplacement((TQ84_ADDRESS_SIZE)Address + ImmediateSize, Instruction);
         }
         else if (IS_VALID_ADDRESS(X86Instruction->Displacement))
         {

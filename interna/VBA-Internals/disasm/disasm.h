@@ -420,6 +420,9 @@ typedef enum _ARCHITECTURE_TYPE
 
 } ARCHITECTURE_TYPE;
 
+// TQ84:
+struct _INSTRUCTION;
+
 typedef BOOL (*INIT_INSTRUCTION)(struct _INSTRUCTION *Instruction);
 typedef void (*DUMP_INSTRUCTION)(struct _INSTRUCTION *Instruction, BOOL ShowBytes, BOOL Verbose);
 typedef BOOL (*GET_INSTRUCTION)(struct _INSTRUCTION *Instruction, U8 *Address, U32 Flags);
