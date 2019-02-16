@@ -40,27 +40,8 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr);
 #include "C:\temp\mhook\mhook-lib\mhook.h"
 
 // --------------------------------------------------------------------
+#include "WinAPI-typedefs.h"  
 
-
-typedef BOOL      (WINAPI *fn_ChooseColorA           )(LPCHOOSECOLOR lpcc                                                                                   ); fn_ChooseColorA            orig_ChooseColorA       ;
-typedef BOOL      (WINAPI *fn_GetFileVersionInfoA    )(LPCSTR lptstrFilename, DWORD dwHandle, DWORD  dwLen, LPVOID lpData                                   ); fn_GetFileVersionInfoA     orig_GetFileVersionInfoA;
-typedef DWORD     (WINAPI *fn_GetFileVersionInfoSizeA)(LPCSTR lptstrFilename, LPDWORD lpdwHandle                                                            ); fn_GetFileVersionInfoSizeA orig_GetFileVersionInfoSizeA;
-typedef BOOL      (WINAPI *fn_MapAndLoad             )(PCSTR ImageName,PCSTR DllPath,PLOADED_IMAGE LoadedImage,WINBOOL DotDll,WINBOOL ReadOnly              ); fn_MapAndLoad              orig_MapAndLoad             ;
-
-typedef LSTATUS   (WINAPI *fn_RegCloseKey            )( HKEY hKey                                                                                           ); fn_RegCloseKey             orig_RegCloseKey         ;
-typedef LSTATUS   (WINAPI *fn_RegOpenKeyExW          )( HKEY hKey, LPCWSTR lpSubKey, DWORD   ulOptions, REGSAM  samDesired, PHKEY   phkResult)               ; fn_RegOpenKeyExW           orig_RegOpenKeyExW       ;
-typedef LSTATUS   (WINAPI *fn_RegOpenKeyExA          )( HKEY hKey, LPCSTR lpSubKey, DWORD  ulOptions, REGSAM samDesired, PHKEY  phkResult)                   ; fn_RegOpenKeyExA           orig_RegOpenKeyExA       ;
-typedef LSTATUS   (WINAPI *fn_RegQueryValueExA       )( HKEY hKey, LPCSTR  lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE  lpData, LPDWORD lpcbData); fn_RegQueryValueExA        orig_RegQueryValueExA    ;
-typedef LSTATUS   (WINAPI *fn_RegQueryValueExW       )( HKEY hKey, LPCWSTR lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE  lpData, LPDWORD lpcbData); fn_RegQueryValueExW        orig_RegQueryValueExW    ;
-typedef LSTATUS   (WINAPI *fn_RegSetValueExA         )( HKEY hKey, LPCSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData       ); fn_RegSetValueExA          orig_RegSetValueExA      ;
-
-typedef HINSTANCE (WINAPI *fn_ShellExecuteA          )( HWND hwnd, LPCSTR lpOperation, LPCSTR lpFile, LPCSTR lpParameters, LPCSTR lpDirectory, INT nShowCmd ); fn_ShellExecuteA           orig_ShellExecuteA       ;
-typedef BOOL      (WINAPI *fn_ShellExecuteExW        )( SHELLEXECUTEINFOW *pExecInfo                                                                        ); fn_ShellExecuteExW         orig_ShellExecuteExW     ;
-
-// typedef HINSTANCE (WINAPI *fn_SHGetFolderPathW       )( HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPWSTR pszPath
-
-typedef BOOL      (WINAPI *fn_UnMapAndLoad           )(PLOADED_IMAGE LoadedImage                                                                            ); fn_UnMapAndLoad            orig_UnMapAndLoad           ;
-typedef BOOL      (WINAPI *fn_VerQueryValueA         )(LPCVOID pBlock, LPCSTR lpSubBlock, LPVOID *lplpBuffer, PUINT puLen                                   ); fn_VerQueryValueA          orig_VerQueryValueA         ;
 
 
 
@@ -97,66 +78,63 @@ LSTATUS WINAPI hook_RegCloseKey      ( HKEY hKey){
   TQ84_DEBUG("RegCloseKey, hKey = %d", hKey);
   return orig_RegCloseKey(hKey);
 }
+
+
+void printSpecialhKey(HKEY hKey) {
+
+  if (hKey == HKEY_CLASSES_ROOT) {
+     TQ84_DEBUG("HKEY_CLASSES_ROOT");
+  }
+  else if (hKey == HKEY_CURRENT_CONFIG ) {
+     TQ84_DEBUG("HKEY_CURRENT_CONFIG");
+  }
+  else if (hKey == HKEY_CURRENT_USER  ) {
+     TQ84_DEBUG("HKEY_CURRENT_USER");
+  }
+  else if (hKey == HKEY_LOCAL_MACHINE   ) {
+     TQ84_DEBUG("HKEY_LOCAL_MACHINE");
+  }
+  else if (hKey == HKEY_USERS) {
+     TQ84_DEBUG("HKEY_USERS");
+  }
+}
+
 LSTATUS WINAPI hook_RegOpenKeyExW    ( HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult)               {
 
   char x[500];
   wcstombs(x, lpSubKey, 499);
 
   TQ84_DEBUG_INDENT_T("RegOpenKeyExW, hKey = %d, lpSubKey = %s, ulOptions = %d, samDesired = %d", hKey, x, ulOptions, samDesired);
-  if (hKey == HKEY_CLASSES_ROOT) {
-     TQ84_DEBUG("HKEY_CLASSES_ROOT");
-  }
-  else if (hKey == HKEY_CURRENT_CONFIG ) {
-     TQ84_DEBUG("HKEY_CURRENT_CONFIG");
-  }
-  else if (hKey == HKEY_CURRENT_USER  ) {
-     TQ84_DEBUG("HKEY_CURRENT_USER");
-  }
-  else if (hKey == HKEY_LOCAL_MACHINE   ) {
-     TQ84_DEBUG("HKEY_LOCAL_MACHINE");
-  }
-  else if (hKey == HKEY_USERS) {
-     TQ84_DEBUG("HKEY_USERS");
-  }
+
+  printSpecialhKey(hKey);
 
 //TQ84_DEBUG_INDENT_T("RegOpenKeyExW, lpSubKey = %S", lpSubKey);
   LSTATUS ret = orig_RegOpenKeyExW(hKey, lpSubKey, ulOptions, samDesired, phkResult);
-  TQ84_DEBUG("hkeyResult = %d", *phkResult);
+  TQ84_DEBUG("hkeyResult = %d, ret = %d", *phkResult, ret);
   return ret;
 }
 LSTATUS WINAPI hook_RegOpenKeyExA    ( HKEY hKey, LPCSTR lpSubKey, DWORD  ulOptions, REGSAM samDesired, PHKEY  phkResult)                   {
   TQ84_DEBUG_INDENT_T("RegOpenKeyExA, hKey = %d, lpSubKey = %s, ulOptions = %d, samDesired = %d", hKey, lpSubKey, ulOptions, samDesired);
 
-  if (hKey == HKEY_CLASSES_ROOT) {
-     TQ84_DEBUG("HKEY_CLASSES_ROOT");
-  }
-  else if (hKey == HKEY_CURRENT_CONFIG ) {
-     TQ84_DEBUG("HKEY_CURRENT_CONFIG");
-  }
-  else if (hKey == HKEY_CURRENT_USER  ) {
-     TQ84_DEBUG("HKEY_CURRENT_USER");
-  }
-  else if (hKey == HKEY_LOCAL_MACHINE   ) {
-     TQ84_DEBUG("HKEY_LOCAL_MACHINE");
-  }
-  else if (hKey == HKEY_USERS) {
-     TQ84_DEBUG("HKEY_USERS");
-  }
+  printSpecialhKey(hKey);
 
 //TQ84_DEBUG_INDENT_T("RegOpenKeyExA");
 //TQ84_DEBUG("lpSubKey = %s", lpSubKey);
   LSTATUS ret = orig_RegOpenKeyExA(hKey, lpSubKey, ulOptions, samDesired, phkResult);
-  TQ84_DEBUG("hkeyResult = %d", *phkResult);
+
+  TQ84_DEBUG("hkeyResult = %d, ret = %d", *phkResult, ret);
   return ret;
 }
 LSTATUS WINAPI hook_RegQueryValueExA ( HKEY hKey, LPCSTR  lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE  lpData, LPDWORD lpcbData){
-  TQ84_DEBUG_INDENT_T("RegQueryValueExA, lpValueName = %s", lpValueName);
-  return orig_RegQueryValueExA(hKey, lpValueName, lpReserved, lpType, lpData, lpcbData);
+  TQ84_DEBUG_INDENT_T("RegQueryValueExA, hKey = %d, lpValueName = %s", hKey, lpValueName);
+  LSTATUS ret = orig_RegQueryValueExA(hKey, lpValueName, lpReserved, lpType, lpData, lpcbData);
+  TQ84_DEBUG("ret = %d", ret);
+  return ret;
 }
 LSTATUS WINAPI hook_RegQueryValueExW ( HKEY hKey, LPCWSTR lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE  lpData, LPDWORD lpcbData){
   char x[500];
   wcstombs(x, lpValueName, 499);
-  TQ84_DEBUG_INDENT_T("RegQueryValueExW hKey = %d, lpValueName = %s", hKey, lpValueName);
+  TQ84_DEBUG_INDENT_T("RegQueryValueExW hKey = %d, lpValueName = %s", hKey, x);
   return orig_RegQueryValueExW(hKey, lpValueName, lpReserved, lpType, lpData, lpcbData);
 }
 LSTATUS WINAPI hook_RegSetValueExA   ( HKEY hKey, LPCSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData       ){
@@ -263,10 +241,13 @@ breakpoint; // }
 int compareBreakpoints(const void *const f1, const void *const f2) { // {
 
 // int compareBreakpoints(const breakpoint *const f1, const breakpoint *const f2) {
+
+  const breakpoint *bp1 = (breakpoint*) f1;
+  const breakpoint *bp2 = (breakpoint*) f2;
   char txt[200];
-  wsprintf(txt, "Comparing f1 (%d, addr: %d, %s) with f2 (%d, addr: %d, %s)", f1, (long) f1->addr, f1->name, f2, (long) f2->addr, f2->name);
+  wsprintf(txt, "Comparing f1 (%d, addr: %d, %s) with f2 (%d, addr: %d, %s)", bp1, (long) bp1->addr, bp1->name, bp2, (long) bp2->addr, bp2->name);
   msg_2(txt);
-  return ((long)(f1->addr)) - ((long)(f2->addr));
+  return ((long)(bp1->addr)) - ((long)(bp2->addr));
  
 
 // was: breakpoint *breakpointTreeRoot = 0 ...
@@ -765,6 +746,10 @@ return; /* HERE HERE HERE */
     }
 #endif
 
+} // }
+
+__declspec(dllexport) void __stdcall dbg(char *txt) { // {
+  TQ84_DEBUG("dbg = %s", txt);
 } // }
 
 BOOL WINAPI DllMain( // {

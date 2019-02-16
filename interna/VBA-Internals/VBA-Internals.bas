@@ -23,6 +23,11 @@ declare sub VBAInternalsInit                                                    
            byVal addrCallBack as long                                            _
         )
 
+declare sub dbg                                                                  _
+           lib "VBA-Internals.dll" (  _
+           byVal txt as string                                                   _
+        )
+
 sub init() ' {
     VBAInternalsInit(vba.int(addressOf callBack))
 
