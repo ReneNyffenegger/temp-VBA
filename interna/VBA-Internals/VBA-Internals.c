@@ -824,13 +824,13 @@ __declspec(dllexport) void __stdcall dbg(char *txt) { // {
 
 funcPtr_IUnknown_QueryInterface m_loader_queryInterface;
 
-HRESULT __stdcall QueryInterface(void* self, const IID* iid, void** pObj) {
+HRESULT STDMETHODCALLTYPE QueryInterface(void *self, REFIID riid, void **pObj) {
   TQ84_DEBUG_INDENT_T("QueryInterface, self = %d", self);
 
   TQ84_DEBUG("m_loader_queryInterface = %d", m_loader_queryInterface);
 
   LPOLESTR iid_string;
-  StringFromIID(iid, &iid_string);
+  StringFromIID(riid, &iid_string);
 
   char x[500];
   wcstombs(x, iid_string, 499);
