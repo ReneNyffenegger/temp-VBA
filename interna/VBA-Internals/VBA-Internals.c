@@ -839,7 +839,7 @@ HRESULT STDMETHODCALLTYPE QueryInterface(void *self, REFIID riid, void **pObj) {
   CoTaskMemFree(iid_string);
 
 
-  HRESULT ret = m_loader_queryInterface(self, iid, pObj);
+  HRESULT ret = m_loader_queryInterface(self, riid, pObj);
 
   TQ84_DEBUG("ret = %d", ret);
   TQ84_DEBUG("pObj = %d", *pObj);
@@ -898,13 +898,14 @@ __declspec(dllexport) void __stdcall addrOf_m_Loader(void *addr) { // {
     }
 
     TQ84_DEBUG("Trying to hook");
+
     m_loader_queryInterface = m_loader->rootObject->vtbl->QueryInterface;
     if (! Mhook_SetHook((PVOID*) &m_loader_queryInterface, QueryInterface)) {                     \
          MessageBox(0, "Sorry, could not hook", 0, 0);                                 \
      }                                                                                            \
 
-//  m_loader_queryInterface                    = m_loader->rootObject->vtbl->QueryInterface;
-//  m_loader->rootObject->vtbl->QueryInterface = QueryInterface;
+ // m_loader_queryInterface                    = m_loader->rootObject->vtbl->QueryInterface;
+ // m_loader->rootObject->vtbl->QueryInterface = QueryInterface;
 
 
 
