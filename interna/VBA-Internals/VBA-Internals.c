@@ -15,6 +15,8 @@
 
 // #include "vbObject.h"
 
+#include "VCOMInitializerStruct.h"
+
 #define USE_SEARCH
 
 #ifdef USE_SEARCH
@@ -63,6 +65,22 @@ DWORD WINAPI hook_GetFileVersionInfoSizeA(LPCSTR lptstrFilename, LPDWORD lpdwHan
   DWORD ret = orig_GetFileVersionInfoSizeA(lptstrFilename, lpdwHandle);
   TQ84_DEBUG("ret = %d", ret);
   return ret;
+}
+
+HMODULE WINAPI hook_GetModuleHandleA(LPCSTR lpModuleName) {
+  TQ84_DEBUG_INDENT_T("GetModuleHandleA, lpModuleName = %s", lpModuleName);
+
+  HMODULE ret = orig_GetModuleHandleA(lpModuleName);
+
+  TQ84_DEBUG("ret = %d", ret);
+
+  return ret;
+}
+
+FARPROC WINAPI hook_GetProcAddress(HMODULE hModule, LPCSTR lpProcName) {
+  TQ84_DEBUG_INDENT_T("GetProcAddress, hModule = %d, lpProcName = %s", hModule, lpProcName);
+
+  return orig_GetProcAddress(hModule, lpProcName);
 }
 
 BOOL WINAPI hook_MapAndLoad(PCSTR ImageName, PCSTR DllPath, PLOADED_IMAGE LoadedImage, WINBOOL DotDll, WINBOOL ReadOnly) {
@@ -147,6 +165,21 @@ HINSTANCE WINAPI hook_ShellExecuteA( HWND hwnd, LPCSTR lpOperation, LPCSTR lpFil
   return orig_ShellExecuteA(hwnd, lpOperation, lpFile, lpParameters, lpDirectory, nShowCmd);
 }
 
+HRESULT  hook_SHGetFolderPathW(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPWSTR pszPath) {
+
+//char x[500];
+
+//TQ84_DEBUG_INDENT_T("SHGetFolderPathW, hwnd = %d, csidl = %d, hToken = %d, dwFlags = %d", hwnd, csidl, hToken, dwFlags);
+
+  HRESULT ret = orig_SHGetFolderPathW(hwnd, csidl, hToken, dwFlags, pszPath);
+
+//int nof = wcstombs(x, pszPath, 499);
+
+//TQ84_DEBUG("pszPath = %s, nof = %d", x, nof);
+
+  return ret;
+}
+
 BOOL WINAPI hook_ShellExecuteExW(SHELLEXECUTEINFOW *pExecInfo) {
   TQ84_DEBUG_INDENT_T("ShellExecuteExW");
   return orig_ShellExecuteExW(pExecInfo);
@@ -166,7 +199,6 @@ BOOL WINAPI hook_VerQueryValueA(LPCVOID pBlock, LPCSTR lpSubBlock, LPVOID *lplpB
 void* CALLBACK hook_rtcErrObj() {
   TQ84_DEBUG_INDENT_T("hook_rtcErrObj");
 
-
   TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
 
   void* ret = orig_rtcErrObj();
@@ -176,7 +208,35 @@ void* CALLBACK hook_rtcErrObj() {
   return ret;
 }
 
+LPVOID WINAPI hook_VirtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD  flAllocationType, DWORD flProtect) {
 
+  TQ84_DEBUG_INDENT_T("VirtualAlloc, lpAddress = %d, dwSize = %d, flAllocationType = %d, flProtect = %d", lpAddress, dwSize, flAllocationType, flProtect);
+  LPVOID ret = orig_VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect);
+  TQ84_DEBUG("ret = %d\n", ret);
+  return ret;
+
+}
+
+int hook_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr, int cchWideChar, LPSTR lpMultiByteStr, int cbMultiByte, LPCCH lpDefaultChar, LPBOOL lpUsedDefaultChar) {
+  TQ84_DEBUG_INDENT_T("WideCharToMultiByte, codePage = %d, dwFlags = %d, cchWideChar = %d, cbMultiByte = %d", CodePage, dwFlags, cchWideChar, cbMultiByte);
+
+//   char nullTerminated[500];
+  int ret = orig_WideCharToMultiByte(CodePage, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr, cbMultiByte, lpDefaultChar, lpUsedDefaultChar);
+
+//  if (cchWideChar > 0) {
+//    memcpy(nullTerminated, lpMultiByteStr,  cchWideChar);
+//    nullTerminated[cchWideChar] = 0;
+//  }
+//  else {
+//    strcpy(nullTerminated, lpMultiByteStr);
+//  }
+
+
+//TQ84_DEBUG("ret = %d, lpMultiByteStr = %s", ret, nullTerminated);
+  TQ84_DEBUG("ret = %d", ret);
+
+  return ret;
+}
 
 // --------------------------------------------------------------------
 
@@ -666,6 +726,8 @@ __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBac
         TQ84_HOOK_FUNCTION(ChooseColorA             , Comdlg32.dll)
         TQ84_HOOK_FUNCTION(GetFileVersionInfoA      , version.dll )
         TQ84_HOOK_FUNCTION(GetFileVersionInfoSizeA  , version.dll )
+        TQ84_HOOK_FUNCTION(GetProcAddress           , Kernel32.dll)
+        TQ84_HOOK_FUNCTION(GetModuleHandleA         , Kernel32.dll)
         TQ84_HOOK_FUNCTION(MapAndLoad               , Imagehlp.dll)
 
         TQ84_HOOK_FUNCTION(RegCloseKey              , Advapi32.dll )
@@ -675,12 +737,16 @@ __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBac
         TQ84_HOOK_FUNCTION(RegQueryValueExW         , Advapi32.dll )
         TQ84_HOOK_FUNCTION(RegSetValueExA           , Advapi32.dll )
 
+//      TQ84_HOOK_FUNCTION(SHGetFolderPathW         , Shell32.dll  )                                 // TODO !!!
+
         TQ84_HOOK_FUNCTION(ShellExecuteA            , Shell32.dll  )
         TQ84_HOOK_FUNCTION(ShellExecuteExW          , Shell32.dll  )
 
         TQ84_HOOK_FUNCTION(UnMapAndLoad             , Imagehlp.dll)
 //      TQ84_HOOK_FUNCTION(VerQueryValue            , Api-ms-win-core-version-l1-1-0.dll)
-        TQ84_HOOK_FUNCTION(VerQueryValueA           , version.dll)
+        TQ84_HOOK_FUNCTION(VerQueryValueA           , version.dll )
+        TQ84_HOOK_FUNCTION(VirtualAlloc             , Kernel32.dll)
+//      TQ84_HOOK_FUNCTION(WideCharToMultiByte      , Kernel32.dll)
 
 //     orig_rtcErrObj = (fn_rtcErrObj) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcErrObj");
 //     TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
