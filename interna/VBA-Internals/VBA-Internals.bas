@@ -28,6 +28,11 @@ declare sub dbg                                                                 
            byVal txt as string                                                   _
         )
 
+declare sub addrOf_m_Loader            _
+           lib "VBA-Internals.dll" (   _
+           byVal addr as long          _
+        )
+
 sub init() ' {
     VBAInternalsInit(vba.int(addressOf callBack))
 

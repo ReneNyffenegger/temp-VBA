@@ -15,7 +15,11 @@
 
 // #include "vbObject.h"
 
+#include "WinAPI-typedefs.h"  
+
 #include "VCOMInitializerStruct.h"
+
+VCOMInitializerStruct *m_loader;
 
 #define USE_SEARCH
 
@@ -42,7 +46,6 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr);
 #include "C:\temp\mhook\mhook-lib\mhook.h"
 
 // --------------------------------------------------------------------
-#include "WinAPI-typedefs.h"  
 
 
 
@@ -722,40 +725,40 @@ __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBac
 
      { TQ84_DEBUG_INDENT_T("Initializing hooks");
 
-        TQ84_HOOK_FUNCTION(rtcErrObj                , VBE7.dll    )
-        TQ84_HOOK_FUNCTION(ChooseColorA             , Comdlg32.dll)
-        TQ84_HOOK_FUNCTION(GetFileVersionInfoA      , version.dll )
-        TQ84_HOOK_FUNCTION(GetFileVersionInfoSizeA  , version.dll )
-        TQ84_HOOK_FUNCTION(GetProcAddress           , Kernel32.dll)
-        TQ84_HOOK_FUNCTION(GetModuleHandleA         , Kernel32.dll)
-        TQ84_HOOK_FUNCTION(MapAndLoad               , Imagehlp.dll)
-
-        TQ84_HOOK_FUNCTION(RegCloseKey              , Advapi32.dll )
-        TQ84_HOOK_FUNCTION(RegOpenKeyExW            , Advapi32.dll )
-        TQ84_HOOK_FUNCTION(RegOpenKeyExA            , Advapi32.dll )
-        TQ84_HOOK_FUNCTION(RegQueryValueExA         , Advapi32.dll )
-        TQ84_HOOK_FUNCTION(RegQueryValueExW         , Advapi32.dll )
-        TQ84_HOOK_FUNCTION(RegSetValueExA           , Advapi32.dll )
-
-//      TQ84_HOOK_FUNCTION(SHGetFolderPathW         , Shell32.dll  )                                 // TODO !!!
-
-        TQ84_HOOK_FUNCTION(ShellExecuteA            , Shell32.dll  )
-        TQ84_HOOK_FUNCTION(ShellExecuteExW          , Shell32.dll  )
-
-        TQ84_HOOK_FUNCTION(UnMapAndLoad             , Imagehlp.dll)
-//      TQ84_HOOK_FUNCTION(VerQueryValue            , Api-ms-win-core-version-l1-1-0.dll)
-        TQ84_HOOK_FUNCTION(VerQueryValueA           , version.dll )
-        TQ84_HOOK_FUNCTION(VirtualAlloc             , Kernel32.dll)
-//      TQ84_HOOK_FUNCTION(WideCharToMultiByte      , Kernel32.dll)
-
-//     orig_rtcErrObj = (fn_rtcErrObj) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcErrObj");
-//     TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
-
-//     if (! Mhook_SetHook((PVOID*) &orig_rtcErrObj, (PVOID) hook_rtcErrObj)) {
-//       TQ84_DEBUG("Sorry, could not hook rtcErrObj");
-//     }
-//     TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
-
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(rtcErrObj                , VBE7.dll    )
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(ChooseColorA             , Comdlg32.dll)
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(GetFileVersionInfoA      , version.dll )
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(GetFileVersionInfoSizeA  , version.dll )
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(GetProcAddress           , Kernel32.dll)
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(GetModuleHandleA         , Kernel32.dll)
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(MapAndLoad               , Imagehlp.dll)
+// Temporarly unhooked:
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(RegCloseKey              , Advapi32.dll )
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(RegOpenKeyExW            , Advapi32.dll )
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(RegOpenKeyExA            , Advapi32.dll )
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(RegQueryValueExA         , Advapi32.dll )
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(RegQueryValueExW         , Advapi32.dll )
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(RegSetValueExA           , Advapi32.dll )
+// Temporarly unhooked:
+// Temporarly unhooked://      TQ84_HOOK_FUNCTION(SHGetFolderPathW         , Shell32.dll  )                                 // TODO !!!
+// Temporarly unhooked:
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(ShellExecuteA            , Shell32.dll  )
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(ShellExecuteExW          , Shell32.dll  )
+// Temporarly unhooked:
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(UnMapAndLoad             , Imagehlp.dll)
+// Temporarly unhooked://      TQ84_HOOK_FUNCTION(VerQueryValue            , Api-ms-win-core-version-l1-1-0.dll)
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(VerQueryValueA           , version.dll )
+// Temporarly unhooked:        TQ84_HOOK_FUNCTION(VirtualAlloc             , Kernel32.dll)
+// Temporarly unhooked://      TQ84_HOOK_FUNCTION(WideCharToMultiByte      , Kernel32.dll)
+// Temporarly unhooked:
+// Temporarly unhooked://     orig_rtcErrObj = (fn_rtcErrObj) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcErrObj");
+// Temporarly unhooked://     TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
+// Temporarly unhooked:
+// Temporarly unhooked://     if (! Mhook_SetHook((PVOID*) &orig_rtcErrObj, (PVOID) hook_rtcErrObj)) {
+// Temporarly unhooked://       TQ84_DEBUG("Sorry, could not hook rtcErrObj");
+// Temporarly unhooked://     }
+// Temporarly unhooked://     TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
+// Temporarly unhooked:
 
 
      }
@@ -818,10 +821,24 @@ __declspec(dllexport) void __stdcall dbg(char *txt) { // {
   TQ84_DEBUG("dbg = %s", txt);
 } // }
 
+
+__declspec(dllexport) void __stdcall addrOf_m_Loader(void *addr) { // {
+    TQ84_DEBUG_INDENT_T("addrOf_m_Loader = %d", addr);
+
+ // Sanity check
+
+    m_loader = (VCOMInitializerStruct*) addr;
+
+    TQ84_DEBUG("m_loader.kernel32Handle = %d, GetModuleHandle() = %d", m_loader->kernel32Handle, GetModuleHandle("kernel32.dll"));
+  
+
+} // }
+
 BOOL WINAPI DllMain( // {
   _In_ HINSTANCE hinstDLL,
   _In_ DWORD     fdwReason,
   _In_ LPVOID    lpvReserved
+
 ) {
 
    int i;
