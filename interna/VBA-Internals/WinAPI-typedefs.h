@@ -19,6 +19,8 @@ typedef BOOL      (WINAPI *fn_ShellExecuteExW        )( SHELLEXECUTEINFOW *pExec
 
 typedef HRESULT   (WINAPI *fn_SHGetFolderPathW       )( HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPWSTR pszPath                                                                                        ); fn_SHGetFolderPathW        orig_SHGetFolderPathW       ;
 
+typedef void      (WINAPI *fn_SysFreeString          )(BSTR bstrString                                                                                                                                            ); fn_SysFreeString           orig_SysFreeString;
+
 typedef BOOL      (WINAPI *fn_UnMapAndLoad           )(PLOADED_IMAGE LoadedImage                                                                                                                                  ); fn_UnMapAndLoad            orig_UnMapAndLoad           ;
 typedef int       (WINAPI *fn_WideCharToMultiByte    )( UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr, int cchWideChar, LPSTR lpMultiByteStr, int cbMultiByte, LPCCH lpDefaultChar, LPBOOL lpUsedDefaultChar ); fn_WideCharToMultiByte     orig_WideCharToMultiByte    ;
 typedef BOOL      (WINAPI *fn_VerQueryValueA         )(LPCVOID pBlock, LPCSTR lpSubBlock, LPVOID *lplpBuffer, PUINT puLen                                                                                         ); fn_VerQueryValueA          orig_VerQueryValueA         ;

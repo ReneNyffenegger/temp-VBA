@@ -83,7 +83,11 @@ HMODULE WINAPI hook_GetModuleHandleA(LPCSTR lpModuleName) {
 FARPROC WINAPI hook_GetProcAddress(HMODULE hModule, LPCSTR lpProcName) {
   TQ84_DEBUG_INDENT_T("GetProcAddress, hModule = %d, lpProcName = %s", hModule, lpProcName);
 
-  return orig_GetProcAddress(hModule, lpProcName);
+  FARPROC ret = orig_GetProcAddress(hModule, lpProcName);
+
+  TQ84_DEBUG("ret = %d", ret);
+
+  return ret;
 }
 
 BOOL WINAPI hook_MapAndLoad(PCSTR ImageName, PCSTR DllPath, PLOADED_IMAGE LoadedImage, WINBOOL DotDll, WINBOOL ReadOnly) {
@@ -181,6 +185,22 @@ HRESULT  hook_SHGetFolderPathW(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlag
 //TQ84_DEBUG("pszPath = %s, nof = %d", x, nof);
 
   return ret;
+}
+
+void hook_SysFreeString(BSTR bstrString) {
+
+  TQ84_DEBUG_INDENT_T("SysFreeString, bstrString = %d", bstrString);
+  
+
+  if (bstrString) {
+
+    char x[500];
+    wcstombs(x, bstrString, 499);
+
+    TQ84_DEBUG("bstrString = %s", x);
+  }
+
+  orig_SysFreeString(bstrString);
 }
 
 BOOL WINAPI hook_ShellExecuteExW(SHELLEXECUTEINFOW *pExecInfo) {
@@ -824,7 +844,11 @@ __declspec(dllexport) void __stdcall dbg(char *txt) { // {
 
 funcPtr_IUnknown_QueryInterface m_loader_queryInterface;
 
-HRESULT STDMETHODCALLTYPE QueryInterface(void *self, REFIID riid, void **pObj) {
+// fn_GetProcAddress               orig_GetProcAddress;
+
+// fn_WideCharToMultiByte          orig_WideCharToMultiByte;
+
+HRESULT STDMETHODCALLTYPE hook_QueryInterface(void *self, REFIID riid, void **pObj) {
   TQ84_DEBUG_INDENT_T("QueryInterface, self = %d", self);
 
   TQ84_DEBUG("m_loader_queryInterface = %d", m_loader_queryInterface);
@@ -866,6 +890,13 @@ __declspec(dllexport) void __stdcall addrOf_m_Loader(void *addr) { // {
       MessageBox(0, "m_loader.vTablePtr!", 0, 0);
     }
 
+    if (m_loader->GetProcAddress != GetProcAddress(h, "GetProcAddress")) {
+      MessageBox(0, "GetProcAddress!", 0, 0);
+    }
+
+    if (m_loader->SysFreeString != GetProcAddress(GetModuleHandle("oleaut32.dll"), "SysFreeString")) {
+      MessageBox(0, "SysFreeString!", 0, 0);
+    }
 
 
     TQ84_DEBUG("m_loader->iDispatch.QueryInterface       = %d", m_loader->iDispatch.QueryInterface);
@@ -876,6 +907,10 @@ __declspec(dllexport) void __stdcall addrOf_m_Loader(void *addr) { // {
     TQ84_DEBUG("m_loader->iDispatch.GetIDsOfNames        = %d", m_loader->iDispatch.GetIDsOfNames );
     TQ84_DEBUG("m_loader->iDispatch.Invoke               = %d", m_loader->iDispatch.Invoke        );
 
+    TQ84_DEBUG("m_loader->SysFreeString                  = %d", m_loader->SysFreeString);
+    TQ84_DEBUG("m_loader->WideCharToMultiByte            = %d", m_loader->WideCharToMultiByte);
+    TQ84_DEBUG("m_loader->GetProcAddress                 = %d", m_loader->GetProcAddress);
+
 //  TQ84_DEBUG("1st element (* ) in m_loader: %d", *  ((int* ) addr));
 //  TQ84_DEBUG("1st element (**) in m_loader: %d", ** ((int**) addr));
 
@@ -884,6 +919,7 @@ __declspec(dllexport) void __stdcall addrOf_m_Loader(void *addr) { // {
     TQ84_DEBUG("vTablePtr  = %d", m_loader->vTablePtr  );
     TQ84_DEBUG("rootObject = %d", m_loader->rootObject  );
     TQ84_DEBUG("classFactory = %d", m_loader->classFactory  );
+
 
     TQ84_DEBUG("rootObject->… QueryInterface = %d", m_loader->rootObject->vtbl->QueryInterface);
 //  TQ84_DEBUG("& rootObject->QueryInterface = %d", & (m_loader->rootObject->QueryInterface));
@@ -900,12 +936,24 @@ __declspec(dllexport) void __stdcall addrOf_m_Loader(void *addr) { // {
     TQ84_DEBUG("Trying to hook");
 
     m_loader_queryInterface = m_loader->rootObject->vtbl->QueryInterface;
-    if (! Mhook_SetHook((PVOID*) &m_loader_queryInterface, QueryInterface)) {                     \
-         MessageBox(0, "Sorry, could not hook", 0, 0);                                 \
-     }                                                                                            \
+    if (! Mhook_SetHook((PVOID*) &m_loader_queryInterface, hook_QueryInterface)) {
+         MessageBox(0, "Sorry, could not hook", 0, 0);
+    }
 
- // m_loader_queryInterface                    = m_loader->rootObject->vtbl->QueryInterface;
- // m_loader->rootObject->vtbl->QueryInterface = QueryInterface;
+    orig_GetProcAddress = m_loader->GetProcAddress;
+    if (! Mhook_SetHook((PVOID*) &orig_GetProcAddress, hook_GetProcAddress)) {
+//  if (! Mhook_SetHook((PVOID*) &(m_loader->GetProcAddress), hook_GetProcAddress)) {
+         MessageBox(0, "Sorry, could not hook GetProcAddress", 0, 0);
+    }
+
+//  orig_SysFreeString = m_loader->SysFreeString;
+//  if (! Mhook_SetHook((PVOID*) &orig_SysFreeString, hook_SysFreeString)) {
+//       MessageBox(0, "Sorry, could not hook SysFreeString", 0, 0);
+//  }
+    
+
+//  m_loader_queryInterface                    = m_loader->rootObject->vtbl->QueryInterface;
+//  m_loader->rootObject->vtbl->QueryInterface = QueryInterface;
 
 
 
