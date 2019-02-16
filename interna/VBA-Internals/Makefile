@@ -8,11 +8,11 @@ VBA-Internals.o: VBA-Internals.c
 mhook.o: \temp\mhook\mhook-lib\mhook.cpp
 	gcc -c \temp\mhook\mhook-lib\mhook.cpp
 
-disasm.o: \temp\mhook\disasm-lib\disasm.c
-	gcc -c \temp\mhook\disasm-lib\disasm.c
+disasm.o: disasm/disasm.c
+	gcc -c disasm/disasm.c
 
-disasm_x86.o: \temp\mhook\disasm-lib\disasm_x86.c
-	gcc -c \temp\mhook\disasm-lib\disasm_x86.c
+disasm_x86.o: disasm\disasm_x86.c
+	gcc -c disasm/disasm_x86.c
 
 cpu.o: \temp\mhook\disasm-lib\cpu.c
 	gcc -c \temp\mhook\disasm-lib\cpu.c
