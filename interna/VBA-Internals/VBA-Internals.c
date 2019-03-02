@@ -43,15 +43,17 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr);
 #define TQ84_DEBUG_FUNCNAME_WIDTH "50"
 #include "c:\lib\tq84-c-debug\tq84_debug.c"
 
-#include "C:\temp\mhook\mhook-lib\mhook.h"
+// #include "C:\temp\mhook\mhook-lib\mhook.h"
+#include "mhook\mhook.h"
 
 // --------------------------------------------------------------------
 
 
 
 
-typedef void* (CALLBACK *fn_rtcErrObj          )()                                                                        ; fn_rtcErrObj              orig_rtcErrObj          ;
+typedef void* (CALLBACK *fn_rtcErrObj          )(); fn_rtcErrObj orig_rtcErrObj          ;
 
+// { Hook functions
 
 BOOL WINAPI hook_ChooseColorA(LPCHOOSECOLOR lpcc) {
   TQ84_DEBUG("ChooseColor");
@@ -82,6 +84,11 @@ HMODULE WINAPI hook_GetModuleHandleA(LPCSTR lpModuleName) {
 
 FARPROC WINAPI hook_GetProcAddress(HMODULE hModule, LPCSTR lpProcName) {
   TQ84_DEBUG_INDENT_T("GetProcAddress, hModule = %d, lpProcName = %s", hModule, lpProcName);
+
+  if (! strcmp(lpProcName, "GetProcAddress")) {
+    TQ84_DEBUG("lpProcName = GetProcAddress, returning hook_GetProcAddress");
+    return hook_GetProcAddress;
+  }
 
   FARPROC ret = orig_GetProcAddress(hModule, lpProcName);
 
@@ -261,6 +268,8 @@ int hook_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr,
   return ret;
 }
 
+// }
+
 // --------------------------------------------------------------------
 
 typedef unsigned char   instruction;
@@ -323,7 +332,7 @@ breakpoint; // }
 
 int compareBreakpoints(const void *const f1, const void *const f2) { // {
 
-// int compareBreakpoints(const breakpoint *const f1, const breakpoint *const f2) {
+// int compareBreakpoints(const breakpoint *const f1, const breakpoint *const f2) 
 
   const breakpoint *bp1 = (breakpoint*) f1;
   const breakpoint *bp2 = (breakpoint*) f2;
@@ -462,9 +471,10 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) { // {
 
     if      (exPtr->ExceptionRecord->ExceptionCode == EXCEPTION_BREAKPOINT ) { // {
 
+       TQ84_DEBUG("EXCEPTION_BREAKPOINT, addr = %d", exPtr->ContextRecord->Eip);
+
 #ifdef USE_SEARCH // {
 
-       TQ84_DEBUG_INDENT_T("EXCEPTION_BREAKPOINT, addr = %d", exPtr->ContextRecord->Eip);
 
 
        breakpoint **breakpointFound;
@@ -620,6 +630,7 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) { // {
     } // }
     else { // {
 
+       TQ84_DEBUG("EXCEPTION else with code %x at address %d", exPtr->ExceptionRecord->ExceptionCode, exPtr->ContextRecord->Eip);
     //
     // Should never be reached.
     //
@@ -735,6 +746,7 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr) { // {
        }                                                                                                   \
      }
 
+FARPROC WINAPI hook_GetProcAddress(HMODULE hModule, LPCSTR lpProcName);
 
 __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBack_) { // {
 
@@ -743,42 +755,52 @@ __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBac
        initialized ++;
        curProcess = GetCurrentProcess();
 
+    AddVectoredExceptionHandler(1, VectoredHandler);
+
+    TQ84_DEBUG("Address of VBAInternalsInit            = %d", VBAInternalsInit           );
+    TQ84_DEBUG("Address of VectoredHandler             = %d", VectoredHandler            );
+    TQ84_DEBUG("Address of compareBreakpoints          = %d", compareBreakpoints         );
+    TQ84_DEBUG("Address of callCallback                = %d", callCallback               );
+    TQ84_DEBUG("Address of hook_GetProcAddress         = %d", hook_GetProcAddress        );
+
      { TQ84_DEBUG_INDENT_T("Initializing hooks");
 
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(rtcErrObj                , VBE7.dll    )
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(ChooseColorA             , Comdlg32.dll)
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(GetFileVersionInfoA      , version.dll )
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(GetFileVersionInfoSizeA  , version.dll )
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(GetProcAddress           , Kernel32.dll)
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(GetModuleHandleA         , Kernel32.dll)
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(MapAndLoad               , Imagehlp.dll)
-// Temporarly unhooked:
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(RegCloseKey              , Advapi32.dll )
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(RegOpenKeyExW            , Advapi32.dll )
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(RegOpenKeyExA            , Advapi32.dll )
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(RegQueryValueExA         , Advapi32.dll )
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(RegQueryValueExW         , Advapi32.dll )
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(RegSetValueExA           , Advapi32.dll )
-// Temporarly unhooked:
-// Temporarly unhooked://      TQ84_HOOK_FUNCTION(SHGetFolderPathW         , Shell32.dll  )                                 // TODO !!!
-// Temporarly unhooked:
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(ShellExecuteA            , Shell32.dll  )
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(ShellExecuteExW          , Shell32.dll  )
-// Temporarly unhooked:
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(UnMapAndLoad             , Imagehlp.dll)
-// Temporarly unhooked://      TQ84_HOOK_FUNCTION(VerQueryValue            , Api-ms-win-core-version-l1-1-0.dll)
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(VerQueryValueA           , version.dll )
-// Temporarly unhooked:        TQ84_HOOK_FUNCTION(VirtualAlloc             , Kernel32.dll)
-// Temporarly unhooked://      TQ84_HOOK_FUNCTION(WideCharToMultiByte      , Kernel32.dll)
-// Temporarly unhooked:
-// Temporarly unhooked://     orig_rtcErrObj = (fn_rtcErrObj) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcErrObj");
-// Temporarly unhooked://     TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
-// Temporarly unhooked:
-// Temporarly unhooked://     if (! Mhook_SetHook((PVOID*) &orig_rtcErrObj, (PVOID) hook_rtcErrObj)) {
-// Temporarly unhooked://       TQ84_DEBUG("Sorry, could not hook rtcErrObj");
-// Temporarly unhooked://     }
-// Temporarly unhooked://     TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
-// Temporarly unhooked:
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(rtcErrObj                , VBE7.dll    )
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(ChooseColorA             , Comdlg32.dll)
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(GetFileVersionInfoA      , version.dll )
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(GetFileVersionInfoSizeA  , version.dll )
+// TODO: uncoment me// !!!!    TQ84_HOOK_FUNCTION(GetProcAddress           , Kernel32.dll)
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(GetModuleHandleA         , Kernel32.dll)
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(MapAndLoad               , Imagehlp.dll)
+// TODO: uncoment me   
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(RegCloseKey              , Advapi32.dll )
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(RegOpenKeyExW            , Advapi32.dll )
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(RegOpenKeyExA            , Advapi32.dll )
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(RegQueryValueExA         , Advapi32.dll )
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(RegQueryValueExW         , Advapi32.dll )
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(RegSetValueExA           , Advapi32.dll )
+// TODO: uncoment me   
+// TODO: uncoment me   //      TQ84_HOOK_FUNCTION(SHGetFolderPathW         , Shell32.dll  )                                 // TODO !!!
+// TODO: uncoment me   
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(ShellExecuteA            , Shell32.dll  )
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(ShellExecuteExW          , Shell32.dll  )
+// TODO: uncoment me   
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(UnMapAndLoad             , Imagehlp.dll)
+// TODO: uncoment me   //      TQ84_HOOK_FUNCTION(VerQueryValue            , Api-ms-win-core-version-l1-1-0.dll)
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(VerQueryValueA           , version.dll )
+// TODO: uncoment me           TQ84_HOOK_FUNCTION(VirtualAlloc             , Kernel32.dll)
+// TODO: uncoment me   //      TQ84_HOOK_FUNCTION(WideCharToMultiByte      , Kernel32.dll)
+   
+
+
+          orig_rtcErrObj = (fn_rtcErrObj) GetProcAddress(GetModuleHandle("VBE7.dll"), "rtcErrObj");
+          TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
+   
+          if (! Mhook_SetHook((PVOID*) &orig_rtcErrObj, (PVOID) hook_rtcErrObj)) {
+            TQ84_DEBUG("Sorry, could not hook rtcErrObj");
+          }
+          TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
+   
 
 
      }
@@ -799,7 +821,7 @@ return; /* HERE HERE HERE */
     addrCallBack = addrCallBack_;
     callCallback("addrCallBack assigned");
 
-    AddVectoredExceptionHandler(1, VectoredHandler);
+//  AddVectoredExceptionHandler(1, VectoredHandler);
 
 //  msg("VBAInternalsInit leaving");
 
@@ -844,11 +866,11 @@ __declspec(dllexport) void __stdcall dbg(char *txt) { // {
 
 funcPtr_IUnknown_QueryInterface m_loader_queryInterface;
 
-// fn_GetProcAddress               orig_GetProcAddress;
+fn_GetProcAddress               REAL_orig_GetProcAddress;
 
 // fn_WideCharToMultiByte          orig_WideCharToMultiByte;
 
-HRESULT STDMETHODCALLTYPE hook_QueryInterface(void *self, REFIID riid, void **pObj) {
+HRESULT STDMETHODCALLTYPE hook_QueryInterface(void *self, REFIID riid, void **pObj) { // {
   TQ84_DEBUG_INDENT_T("QueryInterface, self = %d", self);
 
   TQ84_DEBUG("m_loader_queryInterface = %d", m_loader_queryInterface);
@@ -869,7 +891,7 @@ HRESULT STDMETHODCALLTYPE hook_QueryInterface(void *self, REFIID riid, void **pO
   TQ84_DEBUG("pObj = %d", *pObj);
 
   return ret;
-}
+} // }
 
 __declspec(dllexport) void __stdcall addrOf_m_Loader(void *addr) { // {
     TQ84_DEBUG_INDENT_T("addrOf_m_Loader = %d", addr);
@@ -880,7 +902,37 @@ __declspec(dllexport) void __stdcall addrOf_m_Loader(void *addr) { // {
 
     HANDLE h = GetModuleHandle("kernel32.dll");
 
+
     TQ84_DEBUG("m_loader.kernel32Handle = %d, GetModuleHandle() = %d", m_loader->kernel32Handle, h);
+
+
+    TQ84_DEBUG("Trying to hook");
+
+    m_loader_queryInterface = m_loader->rootObject->vtbl->QueryInterface;
+    if (! Mhook_SetHook((PVOID*) &m_loader_queryInterface, hook_QueryInterface)) {
+         MessageBox(0, "Sorry, could not hook", 0, 0);
+    }
+
+    orig_GetProcAddress      = m_loader->GetProcAddress;
+    REAL_orig_GetProcAddress = orig_GetProcAddress;
+
+    TQ84_DEBUG("before hooking GetProcAddress: orig_GetProcAddress = %d", orig_GetProcAddress);
+    if (! Mhook_SetHook((PVOID*) &orig_GetProcAddress, hook_GetProcAddress)) {
+//  if (! Mhook_SetHook((PVOID*) &(m_loader->GetProcAddress), hook_GetProcAddress)) {
+         MessageBox(0, "Sorry, could not hook GetProcAddress", 0, 0);
+    }
+    TQ84_DEBUG("after hooking GetProcAddress: orig_GetProcAddress = %d", orig_GetProcAddress);
+
+
+//  orig_SysFreeString = m_loader->SysFreeString;
+//  if (! Mhook_SetHook((PVOID*) &orig_SysFreeString, hook_SysFreeString)) {
+//       MessageBox(0, "Sorry, could not hook SysFreeString", 0, 0);
+//  }
+    
+
+//  m_loader_queryInterface                    = m_loader->rootObject->vtbl->QueryInterface;
+//  m_loader->rootObject->vtbl->QueryInterface = QueryInterface;
+
 
     if (h != m_loader->kernel32Handle) {
       MessageBox(0, "m_loader.kernel32Handle!", 0, 0);
@@ -890,9 +942,13 @@ __declspec(dllexport) void __stdcall addrOf_m_Loader(void *addr) { // {
       MessageBox(0, "m_loader.vTablePtr!", 0, 0);
     }
 
-    if (m_loader->GetProcAddress != GetProcAddress(h, "GetProcAddress")) {
-      MessageBox(0, "GetProcAddress!", 0, 0);
+    if (m_loader->GetProcAddress != GetProcAddress) {
+      MessageBox(0, "GetProcAddress (1)!", 0, 0);
     }
+
+//  if (m_loader->GetProcAddress != GetProcAddress(h, "GetProcAddress")) {
+//    MessageBox(0, "GetProcAddress (2)!", 0, 0);
+//  }
 
     if (m_loader->SysFreeString != GetProcAddress(GetModuleHandle("oleaut32.dll"), "SysFreeString")) {
       MessageBox(0, "SysFreeString!", 0, 0);
@@ -914,7 +970,7 @@ __declspec(dllexport) void __stdcall addrOf_m_Loader(void *addr) { // {
 //  TQ84_DEBUG("1st element (* ) in m_loader: %d", *  ((int* ) addr));
 //  TQ84_DEBUG("1st element (**) in m_loader: %d", ** ((int**) addr));
 
-    TQ84_DEBUG("nativeCode (at %d) = %s", m_loader->nativeCode, m_loader->nativeCode);
+    TQ84_DEBUG("nativeCode (at %d)", m_loader->nativeCode);
     TQ84_DEBUG("loaderMem  = %d", m_loader->loaderMem);
     TQ84_DEBUG("vTablePtr  = %d", m_loader->vTablePtr  );
     TQ84_DEBUG("rootObject = %d", m_loader->rootObject  );
@@ -932,30 +988,6 @@ __declspec(dllexport) void __stdcall addrOf_m_Loader(void *addr) { // {
        MessageBox(0, "& (m_loader->rootObject->QueryInterface)", 0, 0);
 
     }
-
-    TQ84_DEBUG("Trying to hook");
-
-    m_loader_queryInterface = m_loader->rootObject->vtbl->QueryInterface;
-    if (! Mhook_SetHook((PVOID*) &m_loader_queryInterface, hook_QueryInterface)) {
-         MessageBox(0, "Sorry, could not hook", 0, 0);
-    }
-
-    orig_GetProcAddress = m_loader->GetProcAddress;
-    if (! Mhook_SetHook((PVOID*) &orig_GetProcAddress, hook_GetProcAddress)) {
-//  if (! Mhook_SetHook((PVOID*) &(m_loader->GetProcAddress), hook_GetProcAddress)) {
-         MessageBox(0, "Sorry, could not hook GetProcAddress", 0, 0);
-    }
-
-//  orig_SysFreeString = m_loader->SysFreeString;
-//  if (! Mhook_SetHook((PVOID*) &orig_SysFreeString, hook_SysFreeString)) {
-//       MessageBox(0, "Sorry, could not hook SysFreeString", 0, 0);
-//  }
-    
-
-//  m_loader_queryInterface                    = m_loader->rootObject->vtbl->QueryInterface;
-//  m_loader->rootObject->vtbl->QueryInterface = QueryInterface;
-
-
 
     TQ84_DEBUG("Returning");
 

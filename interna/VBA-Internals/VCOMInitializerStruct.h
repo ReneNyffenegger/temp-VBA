@@ -7,7 +7,7 @@
 typedef struct VCOMInitializerStruct VCOMInitializerStruct;
 struct VCOMInitializerStruct {
 
-        IDispatch_vTable      iDispatch;
+        IDispatch_vTable      iDispatch;                 // = loaderMem, apparently works because first method invoked?
 //      vtbl_QueryInterface   ; // as longPtr            // = loaderMem, apparently works because first method invoked?
 //      vtbl_AddRef           ; // as longPtr
 //      vtbl_Release          ; // as longPtr

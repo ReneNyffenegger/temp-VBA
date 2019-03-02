@@ -3,7 +3,7 @@ typedef BOOL      (WINAPI *fn_ChooseColorA           )(LPCHOOSECOLOR lpcc       
 typedef BOOL      (WINAPI *fn_GetFileVersionInfoA    )(LPCSTR lptstrFilename, DWORD dwHandle, DWORD  dwLen, LPVOID lpData                                   ); fn_GetFileVersionInfoA     orig_GetFileVersionInfoA;
 typedef DWORD     (WINAPI *fn_GetFileVersionInfoSizeA)(LPCSTR lptstrFilename, LPDWORD lpdwHandle                                                            ); fn_GetFileVersionInfoSizeA orig_GetFileVersionInfoSizeA;
 typedef FARPROC   (WINAPI *fn_GetProcAddress         )(HMODULE hModule, LPCSTR lpProcName                                                                   ); fn_GetProcAddress          orig_GetProcAddress         ;
-typedef HMODULE   (WINAPI* fn_GetModuleHandleA       )(LPCSTR lpModuleName                                                                                  ); fn_GetModuleHandleA        orig_GetModuleHandleA       ;
+typedef HMODULE   (WINAPI *fn_GetModuleHandleA       )(LPCSTR lpModuleName                                                                                  ); fn_GetModuleHandleA        orig_GetModuleHandleA       ;
 
 typedef BOOL      (WINAPI *fn_MapAndLoad             )(PCSTR ImageName,PCSTR DllPath,PLOADED_IMAGE LoadedImage,WINBOOL DotDll,WINBOOL ReadOnly              ); fn_MapAndLoad              orig_MapAndLoad             ;
 
