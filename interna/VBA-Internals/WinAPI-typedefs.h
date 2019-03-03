@@ -5,7 +5,10 @@ typedef DWORD     (WINAPI *fn_GetFileVersionInfoSizeA)(LPCSTR lptstrFilename, LP
 typedef FARPROC   (WINAPI *fn_GetProcAddress         )(HMODULE hModule, LPCSTR lpProcName                                                                   ); fn_GetProcAddress          orig_GetProcAddress         ;
 typedef HMODULE   (WINAPI *fn_GetModuleHandleA       )(LPCSTR lpModuleName                                                                                  ); fn_GetModuleHandleA        orig_GetModuleHandleA       ;
 
-typedef BOOL      (WINAPI *fn_MapAndLoad             )(PCSTR ImageName,PCSTR DllPath,PLOADED_IMAGE LoadedImage,WINBOOL DotDll,WINBOOL ReadOnly              ); fn_MapAndLoad              orig_MapAndLoad             ;
+typedef int       (WINAPI *fn_MessageBoxA            )(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType                                               ); fn_MessageBoxA             orig_MessageBoxA            ;
+
+// typedef BOOL      (WINAPI *fn_MapAndLoad             )(PCSTR ImageName,PCSTR DllPath,PLOADED_IMAGE LoadedImage,WINBOOL DotDll,WINBOOL ReadOnly              ); fn_MapAndLoad              orig_MapAndLoad             ;
+   typedef BOOL      (WINAPI *fn_MapAndLoad             )(PCSTR ImageName,PCSTR DllPath,PLOADED_IMAGE LoadedImage,   BOOL DotDll,   BOOL ReadOnly              ); fn_MapAndLoad              orig_MapAndLoad             ;
 
 typedef LSTATUS   (WINAPI *fn_RegCloseKey            )( HKEY hKey                                                                                           ); fn_RegCloseKey             orig_RegCloseKey            ;
 typedef LSTATUS   (WINAPI *fn_RegOpenKeyExW          )( HKEY hKey, LPCWSTR lpSubKey, DWORD   ulOptions, REGSAM  samDesired, PHKEY   phkResult)               ; fn_RegOpenKeyExW           orig_RegOpenKeyExW          ;

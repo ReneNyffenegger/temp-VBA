@@ -1,0 +1,25 @@
+#
+# Makefile for Visual Studio 
+#
+# vi: ft=make
+#
+.SILENT:
+
+
+test.exe: test.obj mhook.obj disasm.obj disasm_x86.obj cpu.obj
+	link test.obj mhook.obj disasm.obj disasm_x86.obj cpu.obj user32.lib /out:test.exe
+
+test.obj: test.c Makefile.4.test.vc
+	cl /nologo /c test.c
+
+mhook.obj: mhook.c Makefile.4.test.vc
+	cl /nologo /c mhook.c
+
+disasm.obj: ../disasm/disasm.c Makefile.4.test.vc
+	cl /nologo /c ../disasm/disasm.c
+
+disasm_x86.obj: ../disasm/disasm_x86.c Makefile.4.test.vc
+	cl /nologo /c ../disasm/disasm_x86.c
+
+cpu.obj: ../disasm/cpu.c Makefile.4.test.vc
+	cl /nologo /c ../disasm/cpu.c
