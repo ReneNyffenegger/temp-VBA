@@ -47,8 +47,13 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr);
 // --------------------------------------------------------------------
 
 
+typedef struct {
+  IDispatch_vTable * vtbl;
+}
+ERROBJ;
 
-   minimalVBAObject* errObj = NULL;
+ERROBJ  *errObj = NULL;
+//minimalVBAObject* errObj = NULL;
 // IUnknown_vTable * errObj = NULL;
 
 
@@ -261,6 +266,8 @@ int hook_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr,
 
 funcPtr_IUnknown_AddRef         orig_IUnknown_AddRef;
 funcPtr_IUnknown_QueryInterface orig_IUnknown_QueryInterface;
+funcPtr_IDispatch_GetIDsOfNames orig_IDispatch_GetIDsOfNames;
+funcPtr_IDispatch_Invoke        orig_IDispatch_Invoke;
 
 HRESULT STDMETHODCALLTYPE hook_IUnknown_AddRef        (void *self) {
   TQ84_DEBUG_INDENT_T("hook_IUnknown_AddRef");
@@ -282,13 +289,27 @@ HRESULT STDMETHODCALLTYPE hook_IUnknown_QueryInterface(void *self, REFIID riid, 
   return ret;
 }
 
-minimalVBAObject* CALLBACK hook_rtcErrObj() { // 
+HRESULT STDMETHODCALLTYPE hook_IDispatch_GetIDsOfNames(void *self, REFIID riid, LPOLESTR *rgszNames, UINT cNames, LCID lcid, DISPID *rgDispId) {
+  TQ84_DEBUG_INDENT_T("hook_IDispatch_GetIDsOfNames");
+  HRESULT ret = orig_IDispatch_GetIDsOfNames(self, riid, rgszNames, cNames, lcid, rgDispId);
+  return ret;
+}
+
+HRESULT STDMETHODCALLTYPE hook_IDispatch_Invoke(void *self, DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pvarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr) {
+  TQ84_DEBUG_INDENT_T("hook_IDispatch_Invoke");
+  HRESULT ret = orig_IDispatch_Invoke(self, dispidMember, riid, lcid, wFlags, pDispParams, pvarResult, pExcepInfo, puArgErr);
+  return ret;
+}
+
+ERROBJ* CALLBACK hook_rtcErrObj() { // 
+//minimalVBAObject* CALLBACK hook_rtcErrObj() { // 
 // IUnknown_vTable * CALLBACK hook_rtcErrObj() { // 
   TQ84_DEBUG_INDENT_T("hook_rtcErrObj, hook_rtcErrObj = %d", hook_rtcErrObj);
 
   TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
 
-  minimalVBAObject* ret = orig_rtcErrObj();
+  ERROBJ *ret = orig_rtcErrObj();
+//  minimalVBAObject* ret = orig_rtcErrObj();
 //IUnknown_vTable* ret = orig_rtcErrObj();
   if (errObj) {
     if (errObj != ret) {
@@ -311,6 +332,8 @@ minimalVBAObject* CALLBACK hook_rtcErrObj() { //
 //   orig_IUnknown_QueryInterface = errObj->QueryInterface;
      orig_IUnknown_AddRef         = errObj->vtbl->AddRef;
      orig_IUnknown_QueryInterface = errObj->vtbl->QueryInterface;
+     orig_IDispatch_GetIDsOfNames = errObj->vtbl->GetIDsOfNames;
+     orig_IDispatch_Invoke        = errObj->vtbl->Invoke;
 
 //   if (! Mhook_SetHook((PVOID*) & (errObj->vtbl->QueryInterface), (PVOID) hook_IUnknown_QueryInterface)) {
 //   if (! Mhook_SetHook((PVOID*) & (errObj->QueryInterface), (PVOID) hook_IUnknown_QueryInterface)) {
@@ -321,6 +344,14 @@ minimalVBAObject* CALLBACK hook_rtcErrObj() { //
 
      if (! Mhook_SetHook((PVOID*) & orig_IUnknown_QueryInterface, (PVOID) hook_IUnknown_QueryInterface)) {
        MessageBox(0, "Sorry, could not hook orig_IUnknown_QueryInterface", 0, 0);
+     }
+
+     if (! Mhook_SetHook((PVOID*) & orig_IDispatch_GetIDsOfNames, (PVOID) hook_IDispatch_GetIDsOfNames)) {
+       MessageBox(0, "Sorry, could not hook orig_IDispatch_GetIDsOfNames", 0, 0);
+     }
+
+     if (! Mhook_SetHook((PVOID*) & orig_IDispatch_Invoke, (PVOID) hook_IDispatch_Invoke)) {
+       MessageBox(0, "Sorry, could not hook orig_IDispatch_Invoke", 0, 0);
      }
 
      TQ84_DEBUG("errObj->QueryInterface = %d", errObj->vtbl->QueryInterface);
