@@ -1026,6 +1026,14 @@ HRESULT STDMETHODCALLTYPE hook_classFactory_QueryInterface(void *self, REFIID ri
 
 } // }
 
+funcPtr_IDispatch_GetIDsOfNames orig_classFactory_GetIDsOfNames;
+HRESULT STDMETHODCALLTYPE hook_classFactory_GetIDsOfNames(void *self, REFIID riid, LPOLESTR *rgszNames, UINT cNames, LCID lcid, DISPID *rgDispId) { // {
+  TQ84_DEBUG_INDENT_T("hook_classFactory_GetIDsOfNames");
+  HRESULT ret = orig_classFactory_GetIDsOfNames(self, riid, rgszNames, cNames, lcid, rgDispId);
+  return ret;
+
+} // }
+
 HRESULT STDMETHODCALLTYPE hook_QueryInterface(void *self, REFIID riid, void **pObj) { // {
   TQ84_DEBUG_INDENT_T("QueryInterface, self = %d", self);
 
@@ -1203,6 +1211,25 @@ __declspec(dllexport) void __stdcall beforeSettingRootObjectToNothing() { // {
   if (! Mhook_SetHook((PVOID*) &orig_classFactory_QueryInterface, hook_classFactory_QueryInterface)) {
        MessageBox(0, "Sorry, could not hook hook_classFactory_QueryInterface", 0, 0);
   }
+  orig_classFactory_GetIDsOfNames = m_loader->classFactory->vtbl->GetIDsOfNames;
+  if (! Mhook_SetHook((PVOID*) &orig_classFactory_GetIDsOfNames, hook_classFactory_GetIDsOfNames)) {
+       MessageBox(0, "Sorry, could not hook hook_classFactory_GetIDsOfNames", 0, 0);
+  }
+
+} // }
+
+__declspec(dllexport) void __stdcall beforeCallingClassFactoryInit() { // {
+
+  TQ84_DEBUG_INDENT_T("beforeCallingClassFactoryInit");
+
+
+  TQ84_DEBUG("m_loader->classFactory(%d)->vtbl(%d)->QueryInterface   = %d", m_loader->classFactory, m_loader->classFactory->vtbl, m_loader->classFactory->vtbl->QueryInterface  );
+  TQ84_DEBUG("m_loader->classFactory(%d)->vtbl(%d)->AddRef           = %d", m_loader->classFactory, m_loader->classFactory->vtbl, m_loader->classFactory->vtbl->AddRef          );
+  TQ84_DEBUG("m_loader->classFactory(%d)->vtbl(%d)->Release          = %d", m_loader->classFactory, m_loader->classFactory->vtbl, m_loader->classFactory->vtbl->Release         );
+  TQ84_DEBUG("m_loader->classFactory(%d)->vtbl(%d)->GetTypeInfoCount = %d", m_loader->classFactory, m_loader->classFactory->vtbl, m_loader->classFactory->vtbl->GetTypeInfoCount);
+  TQ84_DEBUG("m_loader->classFactory(%d)->vtbl(%d)->GetTypeInfo      = %d", m_loader->classFactory, m_loader->classFactory->vtbl, m_loader->classFactory->vtbl->GetTypeInfo     );
+  TQ84_DEBUG("m_loader->classFactory(%d)->vtbl(%d)->GetIDsOfNames    = %d", m_loader->classFactory, m_loader->classFactory->vtbl, m_loader->classFactory->vtbl->GetIDsOfNames   );
+  TQ84_DEBUG("m_loader->classFactory(%d)->vtbl(%d)->Invoke           = %d", m_loader->classFactory, m_loader->classFactory->vtbl, m_loader->classFactory->vtbl->Invoke          );
 
 } // }
 
