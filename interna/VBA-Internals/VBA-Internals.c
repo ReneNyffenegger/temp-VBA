@@ -116,6 +116,13 @@ LSTATUS WINAPI hook_RegCloseKey      ( HKEY hKey){ // {
   return orig_RegCloseKey(hKey);
 } // }
 
+VOID WINAPI hook_RtlUnwind(PVOID TargetFrame, PVOID TargetIp, PEXCEPTION_RECORD ExceptionRecord, PVOID ReturnValue) {
+  TQ84_DEBUG("RtlUnwind, TargetFrame = %d, TargetIp = %d", TargetFrame, TargetIp);
+
+  orig_RtlUnwind(TargetIp, TargetIp, ExceptionRecord, ReturnValue);
+
+}
+
 void printSpecialhKey(HKEY hKey) { // {
 
   if (hKey == HKEY_CLASSES_ROOT) {
@@ -875,6 +882,7 @@ __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBac
 // TODO: uncoment me           TQ84_HOOK_FUNCTION(RegQueryValueExA         , Advapi32.dll )
 // TODO: uncoment me           TQ84_HOOK_FUNCTION(RegQueryValueExW         , Advapi32.dll )
 // TODO: uncoment me           TQ84_HOOK_FUNCTION(RegSetValueExA           , Advapi32.dll )
+                               TQ84_HOOK_FUNCTION(RtlUnwind                , Kernel32.dll )
 // TODO: uncoment me   
 // TODO: uncoment me   //      TQ84_HOOK_FUNCTION(SHGetFolderPathW         , Shell32.dll  )                                 // TODO !!!
 // TODO: uncoment me   

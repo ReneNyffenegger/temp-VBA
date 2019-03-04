@@ -17,6 +17,9 @@ typedef LSTATUS   (WINAPI *fn_RegQueryValueExA       )( HKEY hKey, LPCSTR  lpVal
 typedef LSTATUS   (WINAPI *fn_RegQueryValueExW       )( HKEY hKey, LPCWSTR lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE  lpData, LPDWORD lpcbData                                                      ); fn_RegQueryValueExW        orig_RegQueryValueExW       ;
 typedef LSTATUS   (WINAPI *fn_RegSetValueExA         )( HKEY hKey, LPCSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData                                                             ); fn_RegSetValueExA          orig_RegSetValueExA         ;
 
+/* NTSYSAPI ? */
+typedef VOID      (WINAPI *fn_RtlUnwind            )(PVOID TargetFrame, PVOID TargetIp, PEXCEPTION_RECORD ExceptionRecord, PVOID ReturnValue                                                                    ); fn_RtlUnwind               orig_RtlUnwind             ;
+
 typedef HINSTANCE (WINAPI *fn_ShellExecuteA          )( HWND hwnd, LPCSTR lpOperation, LPCSTR lpFile, LPCSTR lpParameters, LPCSTR lpDirectory, INT nShowCmd                                                       ); fn_ShellExecuteA           orig_ShellExecuteA          ;
 typedef BOOL      (WINAPI *fn_ShellExecuteExW        )( SHELLEXECUTEINFOW *pExecInfo                                                                                                                              ); fn_ShellExecuteExW         orig_ShellExecuteExW        ;
 
