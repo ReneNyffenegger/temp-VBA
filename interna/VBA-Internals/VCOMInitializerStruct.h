@@ -7,8 +7,8 @@
 typedef struct VCOMInitializerStruct VCOMInitializerStruct;
 struct VCOMInitializerStruct {
 
-        IDispatch_vTable      iDispatch;                 // = loaderMem, apparently works because first method invoked?
-//      vtbl_QueryInterface   ; // as longPtr            // = loaderMem, apparently works because first method invoked?
+        IDispatch_vTable      iDispatch;                       // 4) = loaderMem
+//      vtbl_QueryInterface   ; // as longPtr   
 //      vtbl_AddRef           ; // as longPtr
 //      vtbl_Release          ; // as longPtr
 //      vtbl_GetTypeInfoCount ; // as longPtr
@@ -16,27 +16,26 @@ struct VCOMInitializerStruct {
 //      vtbl_GetIDsOfNames    ; // as longPtr
 //      vtbl_Invoke           ; // as longPtr
 //      -------------------------------------
-        void *RootObjectMem         ; // as longPtr
+        void *RootObjectMem                          ; //   2) VirtualAlloc(RootObjectSize)
 
-        void *helperObject          ; // new ErrEx_Helper -- Obj with NATIVECODE\d\d\d\d_EVERYTHINGACCESS 
+        void *helperObject                           ; //                     7) new ErrEx_Helper -- Obj with NATIVECODE\d\d\d\d_EVERYTHINGACCESS 
 
         void *SysFreeString         ; // as longPtr
-        fn_WideCharToMultiByte  WideCharToMultiByte;
-        fn_GetProcAddress       GetProcAddress;
+        fn_WideCharToMultiByte  WideCharToMultiByte  ; //                 6)
+        fn_GetProcAddress       GetProcAddress       ; //                 6)
 
-        char                  *nativeCode            ; // as string
-        void                  *loaderMem             ; // as longPtr    // VirtualAlloc(len(.nativeCode)) --> then copied from nativeCode
-        int                    ignoreFlag            ; // as boolean    // TypeOf .RootObject Is VBA.Collection
-        VCOMInitializerStruct *vTablePtr; // as longPtr    // Points to the start of this struct 
+        char                  *nativeCode            ; // 1) = "Cryptic String"
+        void                  *loaderMem             ; //      3) = VirtualAlloc(…) 8) Copy from native code to loaderMem
+        int                    ignoreFlag            ; //
+        VCOMInitializerStruct *vTablePtr             ; //            5) setting back to start of this strcut
 
-        HANDLE                 kernel32Handle       ; // as longPtr
+        HANDLE                 kernel32Handle        ; //                 6)
 
     //
     //  rootObject is an interface whose IUnknown or IDispatch points
     //  to the iDispatch table
     //
-//      IDispatch_vTable       *rootObject            ; // as object     // VirtualAlloc(size = 325020); // 325020 =  ROOTOBJECT_SIZE  --> then: varPtr(…)
-        minimalVBAObject       *rootObject            ; // as object     // VirtualAlloc(size = 325020); // 325020 =  ROOTOBJECT_SIZE  --> then: varPtr(…)
-        void                   *classFactory          ; // as object     // A copy (?) of rootObject, thus a  call classFactory.init ...
+        VBAObject_withDisp     *rootObject            ; //                              9) copy from loaderMem to rootObject
+        minimalVBAObject       *classFactory          ; // as object     // A copy (?) of rootObject, thus a  call classFactory.init ...
 
 };
