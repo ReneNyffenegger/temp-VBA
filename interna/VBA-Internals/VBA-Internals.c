@@ -986,6 +986,46 @@ funcPtr_IUnknown_QueryInterface m_loader_queryInterface;
 // 
 // }
 
+funcPtr_IUnknown_QueryInterface orig_rootObject_QueryInterface;
+HRESULT STDMETHODCALLTYPE hook_rootObject_QueryInterface(void *self, REFIID riid, void **pObj) { // {
+  TQ84_DEBUG_INDENT_T("hook_rootObject_QueryInterface, self = %d", self);
+  LPOLESTR iid_string;
+  StringFromIID(riid, &iid_string);
+
+  char x[500];
+  wcstombs(x, iid_string, 499);
+  TQ84_DEBUG("iid = %s", x);
+
+  CoTaskMemFree(iid_string);
+
+  HRESULT ret = orig_rootObject_QueryInterface(self, riid, pObj);
+  TQ84_DEBUG("ret = %d", ret);
+  TQ84_DEBUG("pObj = %d", *pObj);
+
+  return ret;
+
+} // }
+
+funcPtr_IUnknown_QueryInterface orig_classFactory_QueryInterface;
+HRESULT STDMETHODCALLTYPE hook_classFactory_QueryInterface(void *self, REFIID riid, void **pObj) { // {
+  TQ84_DEBUG_INDENT_T("hook_classFactory_QueryInterface, self = %d", self);
+  LPOLESTR iid_string;
+  StringFromIID(riid, &iid_string);
+
+  char x[500];
+  wcstombs(x, iid_string, 499);
+  TQ84_DEBUG("iid = %s", x);
+
+  CoTaskMemFree(iid_string);
+
+  HRESULT ret = orig_classFactory_QueryInterface(self, riid, pObj);
+  TQ84_DEBUG("ret = %d", ret);
+  TQ84_DEBUG("pObj = %d", *pObj);
+
+  return ret;
+
+} // }
+
 HRESULT STDMETHODCALLTYPE hook_QueryInterface(void *self, REFIID riid, void **pObj) { // {
   TQ84_DEBUG_INDENT_T("QueryInterface, self = %d", self);
 
@@ -1003,6 +1043,7 @@ HRESULT STDMETHODCALLTYPE hook_QueryInterface(void *self, REFIID riid, void **pO
 
   TQ84_DEBUG("m_loader->rootObject(%d)->vtbl(%d)->QueryInterface   = %d", m_loader->rootObject, m_loader->rootObject->vtbl, m_loader->rootObject->vtbl->QueryInterface  );
   HRESULT ret = m_loader_queryInterface(self, riid, pObj);
+
   TQ84_DEBUG("m_loader->rootObject(%d)->vtbl(%d)->QueryInterface   = %d", m_loader->rootObject, m_loader->rootObject->vtbl, m_loader->rootObject->vtbl->QueryInterface  );
   TQ84_DEBUG("m_loader->rootObject(%d)->vtbl(%d)->AddRef           = %d", m_loader->rootObject, m_loader->rootObject->vtbl, m_loader->rootObject->vtbl->AddRef          );
   TQ84_DEBUG("m_loader->rootObject(%d)->vtbl(%d)->Release          = %d", m_loader->rootObject, m_loader->rootObject->vtbl, m_loader->rootObject->vtbl->Release         );
@@ -1010,6 +1051,11 @@ HRESULT STDMETHODCALLTYPE hook_QueryInterface(void *self, REFIID riid, void **pO
   TQ84_DEBUG("m_loader->rootObject(%d)->vtbl(%d)->GetTypeInfo      = %d", m_loader->rootObject, m_loader->rootObject->vtbl, m_loader->rootObject->vtbl->GetTypeInfo     );
   TQ84_DEBUG("m_loader->rootObject(%d)->vtbl(%d)->GetIDsOfNames    = %d", m_loader->rootObject, m_loader->rootObject->vtbl, m_loader->rootObject->vtbl->GetIDsOfNames   );
   TQ84_DEBUG("m_loader->rootObject(%d)->vtbl(%d)->Invoke           = %d", m_loader->rootObject, m_loader->rootObject->vtbl, m_loader->rootObject->vtbl->Invoke          );
+
+  orig_rootObject_QueryInterface = m_loader->rootObject->vtbl->QueryInterface;
+  if (! Mhook_SetHook((PVOID*) &orig_rootObject_QueryInterface, hook_rootObject_QueryInterface)) {
+       MessageBox(0, "Sorry, could not hook hook_rootObject_QueryInterface", 0, 0);
+  }
 
   TQ84_DEBUG("ret = %d", ret);
   TQ84_DEBUG("pObj = %d", *pObj);
@@ -1151,6 +1197,11 @@ __declspec(dllexport) void __stdcall beforeSettingRootObjectToNothing() { // {
   }
   else {
      TQ84_DEBUG("m_loader->rootObject->vtbl == m_loader->classFactory->vtbl ");
+  }
+
+  orig_classFactory_QueryInterface = m_loader->classFactory->vtbl->QueryInterface;
+  if (! Mhook_SetHook((PVOID*) &orig_classFactory_QueryInterface, hook_classFactory_QueryInterface)) {
+       MessageBox(0, "Sorry, could not hook hook_classFactory_QueryInterface", 0, 0);
   }
 
 } // }
