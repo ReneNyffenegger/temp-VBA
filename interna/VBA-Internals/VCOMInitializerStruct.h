@@ -36,6 +36,6 @@ struct VCOMInitializerStruct {
     //  to the iDispatch table
     //
         VBAObject_withDisp     *rootObject            ; //                              9) copy from loaderMem to rootObject
-        minimalVBAObject       *classFactory          ; // as object     // A copy (?) of rootObject, thus a  call classFactory.init ...
+        VBAObject_withDisp     *classFactory          ; // as object     // A copy (?) of rootObject, thus a  call classFactory.init ...
 
 };

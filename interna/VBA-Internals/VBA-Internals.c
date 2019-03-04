@@ -1135,6 +1135,15 @@ __declspec(dllexport) void __stdcall beforeSettingRootObjectToNothing() { // {
 
   TQ84_DEBUG_INDENT_T("beforeSettingRootObjectToNothing");
 
+
+  TQ84_DEBUG("m_loader->classFactory(%d)->vtbl(%d)->QueryInterface   = %d", m_loader->classFactory, m_loader->classFactory->vtbl, m_loader->classFactory->vtbl->QueryInterface  );
+  TQ84_DEBUG("m_loader->classFactory(%d)->vtbl(%d)->AddRef           = %d", m_loader->classFactory, m_loader->classFactory->vtbl, m_loader->classFactory->vtbl->AddRef          );
+  TQ84_DEBUG("m_loader->classFactory(%d)->vtbl(%d)->Release          = %d", m_loader->classFactory, m_loader->classFactory->vtbl, m_loader->classFactory->vtbl->Release         );
+  TQ84_DEBUG("m_loader->classFactory(%d)->vtbl(%d)->GetTypeInfoCount = %d", m_loader->classFactory, m_loader->classFactory->vtbl, m_loader->classFactory->vtbl->GetTypeInfoCount);
+  TQ84_DEBUG("m_loader->classFactory(%d)->vtbl(%d)->GetTypeInfo      = %d", m_loader->classFactory, m_loader->classFactory->vtbl, m_loader->classFactory->vtbl->GetTypeInfo     );
+  TQ84_DEBUG("m_loader->classFactory(%d)->vtbl(%d)->GetIDsOfNames    = %d", m_loader->classFactory, m_loader->classFactory->vtbl, m_loader->classFactory->vtbl->GetIDsOfNames   );
+  TQ84_DEBUG("m_loader->classFactory(%d)->vtbl(%d)->Invoke           = %d", m_loader->classFactory, m_loader->classFactory->vtbl, m_loader->classFactory->vtbl->Invoke          );
+
   if (m_loader->rootObject->vtbl != m_loader->classFactory->vtbl) {
     MessageBox(0, "m_loader->rootObject->vtbl != m_loader->classFactory->vtbl", "Assertion failed", 0);
     TQ84_DEBUG("m_loader->rootObject(%d)->vtbl (%d) != m_loader->classFactory(%d)->vtbl (%d)", m_loader->rootObject, m_loader->rootObject->vtbl, m_loader->classFactory, m_loader->classFactory->vtbl);
