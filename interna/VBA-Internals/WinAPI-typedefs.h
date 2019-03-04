@@ -5,6 +5,8 @@ typedef DWORD     (WINAPI *fn_GetFileVersionInfoSizeA)(LPCSTR lptstrFilename, LP
 typedef FARPROC   (WINAPI *fn_GetProcAddress         )(HMODULE hModule, LPCSTR lpProcName                                                                   ); fn_GetProcAddress          orig_GetProcAddress         ;
 typedef HMODULE   (WINAPI *fn_GetModuleHandleA       )(LPCSTR lpModuleName                                                                                  ); fn_GetModuleHandleA        orig_GetModuleHandleA       ;
 
+typedef HMODULE   (WINAPI *fn_LoadLibraryA           )(LPCSTR lpLibName                                                                                     ); fn_LoadLibraryA            orig_LoadLibraryA           ;
+
 typedef int       (WINAPI *fn_MessageBoxA            )(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType                                               ); fn_MessageBoxA             orig_MessageBoxA            ;
 
 // typedef BOOL      (WINAPI *fn_MapAndLoad             )(PCSTR ImageName,PCSTR DllPath,PLOADED_IMAGE LoadedImage,WINBOOL DotDll,WINBOOL ReadOnly              ); fn_MapAndLoad              orig_MapAndLoad             ;
@@ -31,3 +33,5 @@ typedef BOOL      (WINAPI *fn_UnMapAndLoad           )(PLOADED_IMAGE LoadedImage
 typedef int       (WINAPI *fn_WideCharToMultiByte    )( UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr, int cchWideChar, LPSTR lpMultiByteStr, int cbMultiByte, LPCCH lpDefaultChar, LPBOOL lpUsedDefaultChar ); fn_WideCharToMultiByte     orig_WideCharToMultiByte    ;
 typedef BOOL      (WINAPI *fn_VerQueryValueA         )(LPCVOID pBlock, LPCSTR lpSubBlock, LPVOID *lplpBuffer, PUINT puLen                                                                                         ); fn_VerQueryValueA          orig_VerQueryValueA         ;
 typedef LPVOID    (WINAPI *fn_VirtualAlloc           )(LPVOID lpAddress, SIZE_T dwSize, DWORD  flAllocationType, DWORD flProtect                                                                                  ); fn_VirtualAlloc            orig_VirtualAlloc           ;
+
+typedef BOOL (WINAPI *fn_WriteProcessMemory )(HANDLE hProcess, LPVOID lpBaseAddress, LPCVOID lpBuffer, SIZE_T nSize, SIZE_T *lpNumberOfBytesWritten                                                               ); fn_WriteProcessMemory      orig_WriteProcessMemory     ;

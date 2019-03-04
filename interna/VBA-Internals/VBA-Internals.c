@@ -57,7 +57,9 @@ ERROBJ  *errObj = NULL;
 // IUnknown_vTable * errObj = NULL;
 
 
+
 typedef void* (CALLBACK *fn_rtcErrObj          )(); fn_rtcErrObj orig_rtcErrObj          ;
+
 
 // Hook functions // {
 
@@ -103,6 +105,14 @@ FARPROC WINAPI hook_GetProcAddress(HMODULE hModule, LPCSTR lpProcName) { // {
   return ret;
 } // }
 
+HMODULE WINAPI hook_LoadLibraryA(LPCSTR lpLibFileName) { // {
+  TQ84_DEBUG_INDENT_T("LoadLibraryA, lpLibFileName = %s", lpLibFileName);
+  HMODULE ret = orig_LoadLibraryA(lpLibFileName);
+  TQ84_DEBUG("ret = %d", ret);
+  return ret;
+  
+} // }
+
 BOOL WINAPI hook_MapAndLoad(PCSTR ImageName, PCSTR DllPath, PLOADED_IMAGE LoadedImage, WINBOOL DotDll, WINBOOL ReadOnly) { // {
   TQ84_DEBUG_INDENT_T("MapAndLoad, ImageName = %s, DllPath = %s", ImageName, DllPath);
   int ret = orig_MapAndLoad(ImageName, DllPath, LoadedImage, DotDll, ReadOnly);
@@ -116,12 +126,12 @@ LSTATUS WINAPI hook_RegCloseKey      ( HKEY hKey){ // {
   return orig_RegCloseKey(hKey);
 } // }
 
-VOID WINAPI hook_RtlUnwind(PVOID TargetFrame, PVOID TargetIp, PEXCEPTION_RECORD ExceptionRecord, PVOID ReturnValue) {
+VOID WINAPI hook_RtlUnwind(PVOID TargetFrame, PVOID TargetIp, PEXCEPTION_RECORD ExceptionRecord, PVOID ReturnValue) { // {
   TQ84_DEBUG("RtlUnwind, TargetFrame = %d, TargetIp = %d", TargetFrame, TargetIp);
 
   orig_RtlUnwind(TargetIp, TargetIp, ExceptionRecord, ReturnValue);
 
-}
+} // }
 
 void printSpecialhKey(HKEY hKey) { // {
 
@@ -270,45 +280,52 @@ int hook_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr,
   return ret;
 } // }
 
+BOOL WINAPI hook_WriteProcessMemory( HANDLE hProcess, LPVOID lpBaseAddress, LPCVOID lpBuffer, SIZE_T nSize, SIZE_T *lpNumberOfBytesWritten) { // {
+  TQ84_DEBUG_INDENT_T("WriteProcessMemory, hProcess = %d, lpBaseAddress = %d, lpBuffer = %d, nSize = %d", hProcess, lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesWritten);
 
-funcPtr_IUnknown_AddRef         orig_IUnknown_AddRef;
-funcPtr_IUnknown_QueryInterface orig_IUnknown_QueryInterface;
+  BOOL ret = orig_WriteProcessMemory(hProcess, lpBaseAddress, lpBaseAddress, nSize, lpNumberOfBytesWritten);
+  return ret;
+} // }
+
+funcPtr_IUnknown_AddRef         orig_errObj_AddRef;
+funcPtr_IUnknown_QueryInterface orig_errObj_QueryInterface;
 funcPtr_IDispatch_GetIDsOfNames orig_IDispatch_GetIDsOfNames;
 funcPtr_IDispatch_Invoke        orig_IDispatch_Invoke;
 
-HRESULT STDMETHODCALLTYPE hook_IUnknown_AddRef        (void *self) {
+HRESULT STDMETHODCALLTYPE hook_IUnknown_AddRef        (void *self) { // {
   TQ84_DEBUG_INDENT_T("hook_IUnknown_AddRef");
-  ULONG ret = orig_IUnknown_AddRef(self);
+  ULONG ret = orig_errObj_AddRef(self);
   TQ84_DEBUG("ret = %d", ret);
   return ret;
 
-}
-HRESULT STDMETHODCALLTYPE hook_IUnknown_QueryInterface(void *self, REFIID riid, void **ppvObj) {
-  TQ84_DEBUG_INDENT_T("hook_IUnknown_QueryInterface");
+} // }
+
+HRESULT STDMETHODCALLTYPE hook_errObj_QueryInterface(void *self, REFIID riid, void **ppvObj) { // {
+  TQ84_DEBUG_INDENT_T("hook_errObj_QueryInterface");
   TQ84_DEBUG("self = %d, errObj = %d", self, errObj);
 
-  HRESULT ret = orig_IUnknown_QueryInterface(self, riid, ppvObj);
+  HRESULT ret = orig_errObj_QueryInterface(self, riid, ppvObj);
 //HRESULT ret = errObj->vtbl->QueryInterface(self, riid, ppvObj);
 //HRESULT ret = errObj->QueryInterface(self, riid, ppvObj);
 
   TQ84_DEBUG("ret = %d, *ppvObj = %d", ret, *ppvObj);
 
   return ret;
-}
+} // }
 
-HRESULT STDMETHODCALLTYPE hook_IDispatch_GetIDsOfNames(void *self, REFIID riid, LPOLESTR *rgszNames, UINT cNames, LCID lcid, DISPID *rgDispId) {
+HRESULT STDMETHODCALLTYPE hook_IDispatch_GetIDsOfNames(void *self, REFIID riid, LPOLESTR *rgszNames, UINT cNames, LCID lcid, DISPID *rgDispId) { // {
   TQ84_DEBUG_INDENT_T("hook_IDispatch_GetIDsOfNames");
   HRESULT ret = orig_IDispatch_GetIDsOfNames(self, riid, rgszNames, cNames, lcid, rgDispId);
   return ret;
-}
+} // }
 
-HRESULT STDMETHODCALLTYPE hook_IDispatch_Invoke(void *self, DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pvarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr) {
+HRESULT STDMETHODCALLTYPE hook_IDispatch_Invoke(void *self, DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pvarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr) { // {
   TQ84_DEBUG_INDENT_T("hook_IDispatch_Invoke");
   HRESULT ret = orig_IDispatch_Invoke(self, dispidMember, riid, lcid, wFlags, pDispParams, pvarResult, pExcepInfo, puArgErr);
   return ret;
-}
+} // }
 
-ERROBJ* CALLBACK hook_rtcErrObj() { // 
+ERROBJ* CALLBACK hook_rtcErrObj() { // {
 //minimalVBAObject* CALLBACK hook_rtcErrObj() { // 
 // IUnknown_vTable * CALLBACK hook_rtcErrObj() { // 
   TQ84_DEBUG_INDENT_T("hook_rtcErrObj, hook_rtcErrObj = %d", hook_rtcErrObj);
@@ -332,25 +349,73 @@ ERROBJ* CALLBACK hook_rtcErrObj() { //
 
      errObj = ret;
 
-     TQ84_DEBUG("errObj->QueryInterface = %d", errObj->vtbl->QueryInterface);
-     TQ84_DEBUG("errObj->AddRef         = %d", errObj->vtbl->AddRef        );
-     TQ84_DEBUG("errObj->Release        = %d", errObj->vtbl->Release       );
+     TQ84_DEBUG("errObj->QueryInterface   = %d", errObj->vtbl->QueryInterface  );
+     TQ84_DEBUG("errObj->AddRef           = %d", errObj->vtbl->AddRef          );
+     TQ84_DEBUG("errObj->Release          = %d", errObj->vtbl->Release         );
+     TQ84_DEBUG("errObj->GetTypeInfoCount = %d", errObj->vtbl->GetTypeInfoCount);
+     TQ84_DEBUG("errObj->GetTypeInfo      = %d", errObj->vtbl->GetTypeInfo     );
+     TQ84_DEBUG("errObj->GetIDsOfNames    = %d", errObj->vtbl->GetIDsOfNames   );
+     TQ84_DEBUG("errObj->Invoke           = %d", errObj->vtbl->Invoke          );
+     TQ84_DEBUG("errObj->4                = %d", *(((int*) errObj->vtbl) + 4)     );
+     TQ84_DEBUG("errObj->5                = %d", *(((int*) errObj->vtbl) + 5)     );
+     TQ84_DEBUG("errObj->6                = %d", *(((int*) errObj->vtbl) + 6)     );
+     TQ84_DEBUG("errObj->7                = %d", *(((int*) errObj->vtbl) + 7)     );
+     TQ84_DEBUG("errObj->8                = %d", *(((int*) errObj->vtbl) + 8)     );
+     TQ84_DEBUG("errObj->9                = %d", *(((int*) errObj->vtbl) + 9)     );
+     TQ84_DEBUG("errObj->10               = %d", *(((int*) errObj->vtbl) + 10)     );
+     TQ84_DEBUG("errObj->11               = %d", *(((int*) errObj->vtbl) + 11)     );
+     TQ84_DEBUG("errObj->12               = %d", *(((int*) errObj->vtbl) + 12)     );
+     TQ84_DEBUG("errObj->13               = %d", *(((int*) errObj->vtbl) + 13)     );
+     TQ84_DEBUG("errObj->14               = %d", *(((int*) errObj->vtbl) + 14)     );
+     TQ84_DEBUG("errObj->15               = %d", *(((int*) errObj->vtbl) + 15)     );
+     TQ84_DEBUG("errObj->16               = %d", *(((int*) errObj->vtbl) + 16)     );
+     TQ84_DEBUG("errObj->17               = %d", *(((int*) errObj->vtbl) + 17)     );
+     TQ84_DEBUG("errObj->18               = %d", *(((int*) errObj->vtbl) + 18)     );
+     TQ84_DEBUG("errObj->19               = %d", *(((int*) errObj->vtbl) + 19)     );
+     TQ84_DEBUG("errObj->20               = %d", *(((int*) errObj->vtbl) + 20)     );
+     TQ84_DEBUG("errObj->21               = %d", *(((int*) errObj->vtbl) + 21)     );
+     TQ84_DEBUG("errObj->22               = %d", *(((int*) errObj->vtbl) + 22)     );
+     TQ84_DEBUG("errObj->23               = %d", *(((int*) errObj->vtbl) + 23)     );
+     TQ84_DEBUG("errObj->24               = %d", *(((int*) errObj->vtbl) + 24)     );
+     TQ84_DEBUG("errObj->25               = %d", *(((int*) errObj->vtbl) + 25)     );
+     TQ84_DEBUG("errObj->26               = %d", *(((int*) errObj->vtbl) + 26)     );
+     TQ84_DEBUG("errObj->27               = %d", *(((int*) errObj->vtbl) + 27)     );
+     TQ84_DEBUG("errObj->28               = %d", *(((int*) errObj->vtbl) + 28)     );
+     TQ84_DEBUG("errObj->29               = %d", *(((int*) errObj->vtbl) + 29)     );
+     TQ84_DEBUG("errObj->30               = %d", *(((int*) errObj->vtbl) + 30)     );
+     TQ84_DEBUG("errObj->31               = %d", *(((int*) errObj->vtbl) + 31)     );
+     TQ84_DEBUG("errObj->32               = %d", *(((int*) errObj->vtbl) + 32)     );
+     TQ84_DEBUG("errObj->33               = %d", *(((int*) errObj->vtbl) + 33)     );
+     TQ84_DEBUG("errObj->34               = %d", *(((int*) errObj->vtbl) + 34)     );
+     TQ84_DEBUG("errObj->35               = %d", *(((int*) errObj->vtbl) + 35)     );
+     TQ84_DEBUG("errObj->36               = %d", *(((int*) errObj->vtbl) + 36)     );
+     TQ84_DEBUG("errObj->37               = %d", *(((int*) errObj->vtbl) + 37)     );
+     TQ84_DEBUG("errObj->38               = %d", *(((int*) errObj->vtbl) + 38)     );
+     TQ84_DEBUG("errObj->39               = %d", *(((int*) errObj->vtbl) + 39)     );
+     TQ84_DEBUG("errObj->40               = %d", *(((int*) errObj->vtbl) + 40)     );
+     TQ84_DEBUG("errObj->41               = %d", *(((int*) errObj->vtbl) + 41)     );
+     TQ84_DEBUG("errObj->42               = %d", *(((int*) errObj->vtbl) + 42)     );
+     TQ84_DEBUG("errObj->43               = %d", *(((int*) errObj->vtbl) + 43)     );
+     TQ84_DEBUG("errObj->44               = %d", *(((int*) errObj->vtbl) + 44)     );
+     TQ84_DEBUG("errObj->45               = %d", *(((int*) errObj->vtbl) + 45)     );
+     TQ84_DEBUG("errObj->46               = %d", *(((int*) errObj->vtbl) + 46)     );
+     TQ84_DEBUG("errObj->47               = %d", *(((int*) errObj->vtbl) + 47)     );
+     TQ84_DEBUG("errObj->48               = %d", *(((int*) errObj->vtbl) + 48)     );
+     TQ84_DEBUG("errObj->49               = %d", *(((int*) errObj->vtbl) + 49)     );
 
-//   orig_IUnknown_QueryInterface = errObj->QueryInterface;
-     orig_IUnknown_AddRef         = errObj->vtbl->AddRef;
-     orig_IUnknown_QueryInterface = errObj->vtbl->QueryInterface;
+//   orig_errObj_QueryInterface = errObj->QueryInterface;
+     orig_errObj_AddRef         = errObj->vtbl->AddRef;
+     orig_errObj_QueryInterface = errObj->vtbl->QueryInterface;
      orig_IDispatch_GetIDsOfNames = errObj->vtbl->GetIDsOfNames;
      orig_IDispatch_Invoke        = errObj->vtbl->Invoke;
 
-//   if (! Mhook_SetHook((PVOID*) & (errObj->vtbl->QueryInterface), (PVOID) hook_IUnknown_QueryInterface)) {
-//   if (! Mhook_SetHook((PVOID*) & (errObj->QueryInterface), (PVOID) hook_IUnknown_QueryInterface)) {
 
-     if (! Mhook_SetHook((PVOID*) & orig_IUnknown_AddRef, (PVOID) hook_IUnknown_AddRef)) {
-       MessageBox(0, "Sorry, could not hook orig_IUnknown_AddRef", 0, 0);
+     if (! Mhook_SetHook((PVOID*) & orig_errObj_AddRef, (PVOID) hook_IUnknown_AddRef)) {
+       MessageBox(0, "Sorry, could not hook orig_errObj_AddRef", 0, 0);
      }
 
-     if (! Mhook_SetHook((PVOID*) & orig_IUnknown_QueryInterface, (PVOID) hook_IUnknown_QueryInterface)) {
-       MessageBox(0, "Sorry, could not hook orig_IUnknown_QueryInterface", 0, 0);
+     if (! Mhook_SetHook((PVOID*) & orig_errObj_QueryInterface, (PVOID) hook_errObj_QueryInterface)) {
+       MessageBox(0, "Sorry, could not hook orig_errObj_QueryInterface", 0, 0);
      }
 
      if (! Mhook_SetHook((PVOID*) & orig_IDispatch_GetIDsOfNames, (PVOID) hook_IDispatch_GetIDsOfNames)) {
@@ -874,7 +939,8 @@ __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBac
 // TODO: uncoment me           TQ84_HOOK_FUNCTION(GetFileVersionInfoSizeA  , version.dll )
 // TODO: uncoment me// !!!!    TQ84_HOOK_FUNCTION(GetProcAddress           , Kernel32.dll)
 // TODO: uncoment me           TQ84_HOOK_FUNCTION(GetModuleHandleA         , Kernel32.dll)
-// TODO: uncoment me           TQ84_HOOK_FUNCTION(MapAndLoad               , Imagehlp.dll)
+                               TQ84_HOOK_FUNCTION(LoadLibraryA             , Kernel32.dll)
+                               TQ84_HOOK_FUNCTION(MapAndLoad               , Imagehlp.dll)
 // TODO: uncoment me   
 // TODO: uncoment me           TQ84_HOOK_FUNCTION(RegCloseKey              , Advapi32.dll )
 // TODO: uncoment me           TQ84_HOOK_FUNCTION(RegOpenKeyExW            , Advapi32.dll )
@@ -889,11 +955,12 @@ __declspec(dllexport) void __stdcall VBAInternalsInit(addrCallBack_t addrCallBac
 // TODO: uncoment me           TQ84_HOOK_FUNCTION(ShellExecuteA            , Shell32.dll  )
 // TODO: uncoment me           TQ84_HOOK_FUNCTION(ShellExecuteExW          , Shell32.dll  )
 // TODO: uncoment me   
-// TODO: uncoment me           TQ84_HOOK_FUNCTION(UnMapAndLoad             , Imagehlp.dll)
+                               TQ84_HOOK_FUNCTION(UnMapAndLoad             , Imagehlp.dll)
 // TODO: uncoment me   //      TQ84_HOOK_FUNCTION(VerQueryValue            , Api-ms-win-core-version-l1-1-0.dll)
 // TODO: uncoment me           TQ84_HOOK_FUNCTION(VerQueryValueA           , version.dll )
 // TODO: uncoment me           TQ84_HOOK_FUNCTION(VirtualAlloc             , Kernel32.dll)
 // TODO: uncoment me   //      TQ84_HOOK_FUNCTION(WideCharToMultiByte      , Kernel32.dll)
+                               TQ84_HOOK_FUNCTION(WriteProcessMemory       , Kernel32.dll)
    
 
 
@@ -1052,13 +1119,73 @@ HRESULT STDMETHODCALLTYPE hook_classFactory_GetIDsOfNames(void *self, REFIID rii
 } // }
 
 funcPtr_IDispatch_Invoke orig_classFactory_Invoke;
-HRESULT STDMETHODCALLTYPE hook_classFactory_Invoke(void *self, DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pvarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr) {
-  TQ84_DEBUG_INDENT_T("hook_classFactory_Invoke, dispidMember = %d", dispidMember);
+HRESULT STDMETHODCALLTYPE hook_classFactory_Invoke(void *self, DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pvarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr) { // {
+  TQ84_DEBUG_INDENT_T("hook_classFactory_Invoke, dispidMember = %d, pvarResult = %d", dispidMember, pvarResult);
 
   HRESULT ret = orig_classFactory_Invoke(self, dispidMember, riid, lcid, wFlags, pDispParams, pvarResult, pExcepInfo, puArgErr);
+  TQ84_DEBUG("pvarResult = %d", pvarResult);
 
   return ret;
-}
+} // }
+
+
+funcPtr_IDispatch_GetIDsOfNames orig_m_VCOMObject_GetIDsOfNames;
+HRESULT STDMETHODCALLTYPE hook_m_VCOMObject_GetIDsOfNames(void *self, REFIID riid, LPOLESTR *rgszNames, UINT cNames, LCID lcid, DISPID *rgDispId) { // {
+  int i;
+    char x[500];
+  TQ84_DEBUG_INDENT_T("hook_m_VCOMObject_GetIDsOfNames, cNames = %d, lcid = %d", cNames, lcid);
+
+
+  HRESULT ret = orig_m_VCOMObject_GetIDsOfNames(self, riid, rgszNames, cNames, lcid, rgDispId);
+
+  for (i=0; i<cNames; i++) {
+    wcstombs(x, rgszNames[i], 499);
+    TQ84_DEBUG("%d -> %s, dispid: %d", i, x, rgDispId[i]);
+  }
+  return ret;
+
+} // }
+
+funcPtr_IDispatch_Invoke orig_m_VCOMObject_Invoke;
+HRESULT STDMETHODCALLTYPE hook_m_VCOMObject_Invoke(void *self, DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pvarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr) { // {
+  TQ84_DEBUG_INDENT_T("hook_m_VCOMObject_Invoke, dispidMember = %d, pvarResult = %d", dispidMember, pvarResult);
+
+  HRESULT ret = orig_m_VCOMObject_Invoke(self, dispidMember, riid, lcid, wFlags, pDispParams, pvarResult, pExcepInfo, puArgErr);
+  TQ84_DEBUG("pvarResult = %d", pvarResult);
+
+  return ret;
+} // }
+
+VBAObject_withDisp *m_VCOMObject;
+
+__declspec(dllexport) void __stdcall set_m_VCOMObject(VBAObject_withDisp **obj) { // {
+  TQ84_DEBUG_INDENT_T("set_m_VCOMObject, obj = %d");
+  TQ84_DEBUG("*obj = %d", *obj);
+
+  m_VCOMObject = *obj;
+
+  TQ84_DEBUG("m_VCOMObject->vtbl = %d", m_VCOMObject->vtbl);
+
+  TQ84_DEBUG("m_VCOMObject->vtbl->QueryInterface   = %d",  m_VCOMObject->vtbl->QueryInterface  );
+  TQ84_DEBUG("m_VCOMObject->vtbl->AddRef           = %d",  m_VCOMObject->vtbl->AddRef          );
+  TQ84_DEBUG("m_VCOMObject->vtbl->Release          = %d",  m_VCOMObject->vtbl->Release         );
+  TQ84_DEBUG("m_VCOMObject->vtbl->GetTypeInfoCount = %d",  m_VCOMObject->vtbl->GetTypeInfoCount);
+  TQ84_DEBUG("m_VCOMObject->vtbl->GetTypeInfo      = %d",  m_VCOMObject->vtbl->GetTypeInfo     );
+  TQ84_DEBUG("m_VCOMObject->vtbl->GetIDsOfNames    = %d",  m_VCOMObject->vtbl->GetIDsOfNames   );
+  TQ84_DEBUG("m_VCOMObject->vtbl->Invoke           = %d",  m_VCOMObject->vtbl->Invoke          );
+
+
+  orig_m_VCOMObject_GetIDsOfNames = m_VCOMObject->vtbl->GetIDsOfNames;
+  if (! Mhook_SetHook((PVOID*) &orig_m_VCOMObject_GetIDsOfNames, hook_m_VCOMObject_GetIDsOfNames)) {
+       MessageBox(0, "Sorry, could not hook hook_m_VCOMObject_GetIDsOfNames", 0, 0);
+  }
+
+  orig_m_VCOMObject_Invoke = m_VCOMObject->vtbl->Invoke;
+  if (! Mhook_SetHook((PVOID*) &orig_m_VCOMObject_Invoke, hook_m_VCOMObject_Invoke)) {
+       MessageBox(0, "Sorry, could not hook hook_m_VCOMObject_Invoke", 0, 0);
+  }
+
+} // }
 
 HRESULT STDMETHODCALLTYPE hook_QueryInterface(void *self, REFIID riid, void **pObj) { // {
   TQ84_DEBUG_INDENT_T("QueryInterface, self = %d", self);
