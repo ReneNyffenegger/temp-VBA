@@ -13,8 +13,6 @@
 #include <imagehlp.h>
 #include <stdlib.h>
 
-// #include "vbObject.h"
-
 #include "WinAPI-typedefs.h"  
 
 #include "VCOMInitializerStruct.h"
@@ -50,29 +48,32 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr);
 
 
 
+   minimalVBAObject* errObj = NULL;
+// IUnknown_vTable * errObj = NULL;
+
 
 typedef void* (CALLBACK *fn_rtcErrObj          )(); fn_rtcErrObj orig_rtcErrObj          ;
 
-// { Hook functions
+// Hook functions // {
 
-BOOL WINAPI hook_ChooseColorA(LPCHOOSECOLOR lpcc) {
+BOOL WINAPI hook_ChooseColorA(LPCHOOSECOLOR lpcc) { // {
   TQ84_DEBUG("ChooseColor");
   return orig_ChooseColorA(lpcc);
-}
+} // }
 
-BOOL WINAPI hook_GetFileVersionInfoA(LPCSTR lptstrFilename, DWORD dwHandle, DWORD dwLen, LPVOID lpData) {
+BOOL WINAPI hook_GetFileVersionInfoA(LPCSTR lptstrFilename, DWORD dwHandle, DWORD dwLen, LPVOID lpData) { // {
   TQ84_DEBUG("GetFileVersionInfo, lptstrFilename = %s, dwHandle = %d, dwLen = %d", lptstrFilename, dwHandle, dwLen);
   return orig_GetFileVersionInfoA(lptstrFilename, dwHandle, dwLen, lpData);
-}
+} // }
 
-DWORD WINAPI hook_GetFileVersionInfoSizeA(LPCSTR lptstrFilename, LPDWORD lpdwHandle) {
+DWORD WINAPI hook_GetFileVersionInfoSizeA(LPCSTR lptstrFilename, LPDWORD lpdwHandle) { // {
   TQ84_DEBUG_INDENT_T("GetFileVersionInfoSizeA, lptstrFilename = %s", lptstrFilename);
   DWORD ret = orig_GetFileVersionInfoSizeA(lptstrFilename, lpdwHandle);
   TQ84_DEBUG("ret = %d", ret);
   return ret;
-}
+} // }
 
-HMODULE WINAPI hook_GetModuleHandleA(LPCSTR lpModuleName) {
+HMODULE WINAPI hook_GetModuleHandleA(LPCSTR lpModuleName) { // {
   TQ84_DEBUG_INDENT_T("GetModuleHandleA, lpModuleName = %s", lpModuleName);
 
   HMODULE ret = orig_GetModuleHandleA(lpModuleName);
@@ -80,39 +81,37 @@ HMODULE WINAPI hook_GetModuleHandleA(LPCSTR lpModuleName) {
   TQ84_DEBUG("ret = %d", ret);
 
   return ret;
-}
+} // }
 
-FARPROC WINAPI hook_GetProcAddress(HMODULE hModule, LPCSTR lpProcName) {
+FARPROC WINAPI hook_GetProcAddress(HMODULE hModule, LPCSTR lpProcName) { // {
   TQ84_DEBUG_INDENT_T("GetProcAddress, hModule = %d, lpProcName = %s", hModule, lpProcName);
 
-  if (! strcmp(lpProcName, "GetProcAddress")) {
-    TQ84_DEBUG("lpProcName = GetProcAddress, returning hook_GetProcAddress");
-    return hook_GetProcAddress;
-  }
+//if (! strcmp(lpProcName, "GetProcAddress")) {
+//  TQ84_DEBUG("lpProcName = GetProcAddress, returning hook_GetProcAddress");
+//  return hook_GetProcAddress;
+//}
 
   FARPROC ret = orig_GetProcAddress(hModule, lpProcName);
 
   TQ84_DEBUG("ret = %d", ret);
 
   return ret;
-}
+} // }
 
-BOOL WINAPI hook_MapAndLoad(PCSTR ImageName, PCSTR DllPath, PLOADED_IMAGE LoadedImage, WINBOOL DotDll, WINBOOL ReadOnly) {
+BOOL WINAPI hook_MapAndLoad(PCSTR ImageName, PCSTR DllPath, PLOADED_IMAGE LoadedImage, WINBOOL DotDll, WINBOOL ReadOnly) { // {
   TQ84_DEBUG_INDENT_T("MapAndLoad, ImageName = %s, DllPath = %s", ImageName, DllPath);
   int ret = orig_MapAndLoad(ImageName, DllPath, LoadedImage, DotDll, ReadOnly);
   TQ84_DEBUG("ret = %d", ret);
 
   return ret;
-}
+} // }
 
-
-LSTATUS WINAPI hook_RegCloseKey      ( HKEY hKey){
+LSTATUS WINAPI hook_RegCloseKey      ( HKEY hKey){ // {
   TQ84_DEBUG("RegCloseKey, hKey = %d", hKey);
   return orig_RegCloseKey(hKey);
-}
+} // }
 
-
-void printSpecialhKey(HKEY hKey) {
+void printSpecialhKey(HKEY hKey) { // {
 
   if (hKey == HKEY_CLASSES_ROOT) {
      TQ84_DEBUG("HKEY_CLASSES_ROOT");
@@ -129,9 +128,9 @@ void printSpecialhKey(HKEY hKey) {
   else if (hKey == HKEY_USERS) {
      TQ84_DEBUG("HKEY_USERS");
   }
-}
+} // }
 
-LSTATUS WINAPI hook_RegOpenKeyExW    ( HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult)               {
+LSTATUS WINAPI hook_RegOpenKeyExW    ( HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult)               { // {
 
   char x[500];
   wcstombs(x, lpSubKey, 499);
@@ -144,8 +143,9 @@ LSTATUS WINAPI hook_RegOpenKeyExW    ( HKEY hKey, LPCWSTR lpSubKey, DWORD ulOpti
   LSTATUS ret = orig_RegOpenKeyExW(hKey, lpSubKey, ulOptions, samDesired, phkResult);
   TQ84_DEBUG("hkeyResult = %d, ret = %d", *phkResult, ret);
   return ret;
-}
-LSTATUS WINAPI hook_RegOpenKeyExA    ( HKEY hKey, LPCSTR lpSubKey, DWORD  ulOptions, REGSAM samDesired, PHKEY  phkResult)                   {
+} // }
+
+LSTATUS WINAPI hook_RegOpenKeyExA    ( HKEY hKey, LPCSTR lpSubKey, DWORD  ulOptions, REGSAM samDesired, PHKEY  phkResult)                   { // {
   TQ84_DEBUG_INDENT_T("RegOpenKeyExA, hKey = %d, lpSubKey = %s, ulOptions = %d, samDesired = %d", hKey, lpSubKey, ulOptions, samDesired);
 
   printSpecialhKey(hKey);
@@ -156,30 +156,33 @@ LSTATUS WINAPI hook_RegOpenKeyExA    ( HKEY hKey, LPCSTR lpSubKey, DWORD  ulOpti
 
   TQ84_DEBUG("hkeyResult = %d, ret = %d", *phkResult, ret);
   return ret;
-}
-LSTATUS WINAPI hook_RegQueryValueExA ( HKEY hKey, LPCSTR  lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE  lpData, LPDWORD lpcbData){
+} // }
+
+LSTATUS WINAPI hook_RegQueryValueExA ( HKEY hKey, LPCSTR  lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE  lpData, LPDWORD lpcbData){ // {
   TQ84_DEBUG_INDENT_T("RegQueryValueExA, hKey = %d, lpValueName = %s", hKey, lpValueName);
   LSTATUS ret = orig_RegQueryValueExA(hKey, lpValueName, lpReserved, lpType, lpData, lpcbData);
   TQ84_DEBUG("ret = %d", ret);
   return ret;
-}
-LSTATUS WINAPI hook_RegQueryValueExW ( HKEY hKey, LPCWSTR lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE  lpData, LPDWORD lpcbData){
+} // }
+
+LSTATUS WINAPI hook_RegQueryValueExW ( HKEY hKey, LPCWSTR lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE  lpData, LPDWORD lpcbData){ // {
   char x[500];
   wcstombs(x, lpValueName, 499);
   TQ84_DEBUG_INDENT_T("RegQueryValueExW hKey = %d, lpValueName = %s", hKey, x);
   return orig_RegQueryValueExW(hKey, lpValueName, lpReserved, lpType, lpData, lpcbData);
-}
-LSTATUS WINAPI hook_RegSetValueExA   ( HKEY hKey, LPCSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData       ){
+} // }
+
+LSTATUS WINAPI hook_RegSetValueExA   ( HKEY hKey, LPCSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData       ){ // {
   TQ84_DEBUG_INDENT_T("RegSetValueExA, hKey = %d, lpValueName = %s", hKey, lpValueName);
   return orig_RegSetValueExA(hKey, lpValueName, Reserved, dwType, lpData, cbData);
-}
+} // }
 
-HINSTANCE WINAPI hook_ShellExecuteA( HWND hwnd, LPCSTR lpOperation, LPCSTR lpFile, LPCSTR lpParameters, LPCSTR lpDirectory, INT nShowCmd ) {
+HINSTANCE WINAPI hook_ShellExecuteA( HWND hwnd, LPCSTR lpOperation, LPCSTR lpFile, LPCSTR lpParameters, LPCSTR lpDirectory, INT nShowCmd ) { // {
   TQ84_DEBUG_INDENT_T("ShellExecuteA, lpOperation = %s, lpFile = %s, lpParameters = %s, lpDirectory = %s, nShowCmd = %d", lpOperation, lpFile, lpParameters, lpDirectory, nShowCmd);  
   return orig_ShellExecuteA(hwnd, lpOperation, lpFile, lpParameters, lpDirectory, nShowCmd);
-}
+} // }
 
-HRESULT  hook_SHGetFolderPathW(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPWSTR pszPath) {
+HRESULT  hook_SHGetFolderPathW(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPWSTR pszPath) { // {
 
 //char x[500];
 
@@ -192,9 +195,9 @@ HRESULT  hook_SHGetFolderPathW(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlag
 //TQ84_DEBUG("pszPath = %s, nof = %d", x, nof);
 
   return ret;
-}
+} // }
 
-void hook_SysFreeString(BSTR bstrString) {
+void hook_SysFreeString(BSTR bstrString) { // {
 
   TQ84_DEBUG_INDENT_T("SysFreeString, bstrString = %d", bstrString);
   
@@ -208,46 +211,33 @@ void hook_SysFreeString(BSTR bstrString) {
   }
 
   orig_SysFreeString(bstrString);
-}
+} // }
 
-BOOL WINAPI hook_ShellExecuteExW(SHELLEXECUTEINFOW *pExecInfo) {
+BOOL WINAPI hook_ShellExecuteExW(SHELLEXECUTEINFOW *pExecInfo) { // {
   TQ84_DEBUG_INDENT_T("ShellExecuteExW");
   return orig_ShellExecuteExW(pExecInfo);
-}
+} // }
 
-BOOL WINAPI hook_UnMapAndLoad(PLOADED_IMAGE LoadedImage) {
+BOOL WINAPI hook_UnMapAndLoad(PLOADED_IMAGE LoadedImage) { // {
   TQ84_DEBUG("UnMapAndLoad");
   return orig_UnMapAndLoad(LoadedImage);
-}
+} // }
 
-
-BOOL WINAPI hook_VerQueryValueA(LPCVOID pBlock, LPCSTR lpSubBlock, LPVOID *lplpBuffer, PUINT puLen) {
+BOOL WINAPI hook_VerQueryValueA(LPCVOID pBlock, LPCSTR lpSubBlock, LPVOID *lplpBuffer, PUINT puLen) { // {
   TQ84_DEBUG("VerQueryValue, lpSubBlock = %s, puLen = %d", lpSubBlock, puLen);
   return orig_VerQueryValueA(pBlock, lpSubBlock, lplpBuffer, puLen);
-}
+} // }
 
-void* CALLBACK hook_rtcErrObj() {
-  TQ84_DEBUG_INDENT_T("hook_rtcErrObj");
-
-  TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
-
-  void* ret = orig_rtcErrObj();
-
-  TQ84_DEBUG("returning ret = %d", ret);
-
-  return ret;
-}
-
-LPVOID WINAPI hook_VirtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD  flAllocationType, DWORD flProtect) {
+LPVOID WINAPI hook_VirtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD  flAllocationType, DWORD flProtect) { // {
 
   TQ84_DEBUG_INDENT_T("VirtualAlloc, lpAddress = %d, dwSize = %d, flAllocationType = %d, flProtect = %d", lpAddress, dwSize, flAllocationType, flProtect);
   LPVOID ret = orig_VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect);
   TQ84_DEBUG("ret = %d\n", ret);
   return ret;
 
-}
+} // }
 
-int hook_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr, int cchWideChar, LPSTR lpMultiByteStr, int cbMultiByte, LPCCH lpDefaultChar, LPBOOL lpUsedDefaultChar) {
+int hook_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr, int cchWideChar, LPSTR lpMultiByteStr, int cbMultiByte, LPCCH lpDefaultChar, LPBOOL lpUsedDefaultChar) { // {
   TQ84_DEBUG_INDENT_T("WideCharToMultiByte, codePage = %d, dwFlags = %d, cchWideChar = %d, cbMultiByte = %d", CodePage, dwFlags, cchWideChar, cbMultiByte);
 
 //   char nullTerminated[500];
@@ -266,9 +256,84 @@ int hook_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr,
   TQ84_DEBUG("ret = %d", ret);
 
   return ret;
+} // }
+
+
+funcPtr_IUnknown_AddRef         orig_IUnknown_AddRef;
+funcPtr_IUnknown_QueryInterface orig_IUnknown_QueryInterface;
+
+HRESULT STDMETHODCALLTYPE hook_IUnknown_AddRef        (void *self) {
+  TQ84_DEBUG_INDENT_T("hook_IUnknown_AddRef");
+  ULONG ret = orig_IUnknown_AddRef(self);
+  TQ84_DEBUG("ret = %d", ret);
+  return ret;
+
+}
+HRESULT STDMETHODCALLTYPE hook_IUnknown_QueryInterface(void *self, REFIID riid, void **ppvObj) {
+  TQ84_DEBUG_INDENT_T("hook_IUnknown_QueryInterface");
+  TQ84_DEBUG("self = %d, errObj = %d", self, errObj);
+
+  HRESULT ret = orig_IUnknown_QueryInterface(self, riid, ppvObj);
+//HRESULT ret = errObj->vtbl->QueryInterface(self, riid, ppvObj);
+//HRESULT ret = errObj->QueryInterface(self, riid, ppvObj);
+
+  TQ84_DEBUG("ret = %d, *ppvObj = %d", ret, *ppvObj);
+
+  return ret;
 }
 
-// }
+minimalVBAObject* CALLBACK hook_rtcErrObj() { // 
+// IUnknown_vTable * CALLBACK hook_rtcErrObj() { // 
+  TQ84_DEBUG_INDENT_T("hook_rtcErrObj, hook_rtcErrObj = %d", hook_rtcErrObj);
+
+  TQ84_DEBUG("orig_rtcErrObj = %d", orig_rtcErrObj);
+
+  minimalVBAObject* ret = orig_rtcErrObj();
+//IUnknown_vTable* ret = orig_rtcErrObj();
+  if (errObj) {
+    if (errObj != ret) {
+       MessageBox(0, "errObj != ret", "Error", 0);
+    }
+    else {
+      TQ84_DEBUG("errObj == ret");
+    }
+
+  }
+  else {
+     TQ84_DEBUG("setting errObj = ret");
+
+     errObj = ret;
+
+     TQ84_DEBUG("errObj->QueryInterface = %d", errObj->vtbl->QueryInterface);
+     TQ84_DEBUG("errObj->AddRef         = %d", errObj->vtbl->AddRef        );
+     TQ84_DEBUG("errObj->Release        = %d", errObj->vtbl->Release       );
+
+//   orig_IUnknown_QueryInterface = errObj->QueryInterface;
+     orig_IUnknown_AddRef         = errObj->vtbl->AddRef;
+     orig_IUnknown_QueryInterface = errObj->vtbl->QueryInterface;
+
+//   if (! Mhook_SetHook((PVOID*) & (errObj->vtbl->QueryInterface), (PVOID) hook_IUnknown_QueryInterface)) {
+//   if (! Mhook_SetHook((PVOID*) & (errObj->QueryInterface), (PVOID) hook_IUnknown_QueryInterface)) {
+
+     if (! Mhook_SetHook((PVOID*) & orig_IUnknown_AddRef, (PVOID) hook_IUnknown_AddRef)) {
+       MessageBox(0, "Sorry, could not hook orig_IUnknown_AddRef", 0, 0);
+     }
+
+     if (! Mhook_SetHook((PVOID*) & orig_IUnknown_QueryInterface, (PVOID) hook_IUnknown_QueryInterface)) {
+       MessageBox(0, "Sorry, could not hook orig_IUnknown_QueryInterface", 0, 0);
+     }
+
+     TQ84_DEBUG("errObj->QueryInterface = %d", errObj->vtbl->QueryInterface);
+     TQ84_DEBUG("errObj->AddRef         = %d", errObj->vtbl->AddRef        );
+     TQ84_DEBUG("errObj->Release        = %d", errObj->vtbl->Release       );
+  }
+
+  TQ84_DEBUG("returning ret (errObj)= %d", ret);
+
+  return ret;
+} // }
+
+ // }
 
 // --------------------------------------------------------------------
 
@@ -866,7 +931,7 @@ __declspec(dllexport) void __stdcall dbg(char *txt) { // {
 
 funcPtr_IUnknown_QueryInterface m_loader_queryInterface;
 
-fn_GetProcAddress               REAL_orig_GetProcAddress;
+// fn_GetProcAddress               REAL_orig_GetProcAddress;
 
 // fn_WideCharToMultiByte          orig_WideCharToMultiByte;
 
@@ -914,7 +979,7 @@ __declspec(dllexport) void __stdcall addrOf_m_Loader(void *addr) { // {
     }
 
     orig_GetProcAddress      = m_loader->GetProcAddress;
-    REAL_orig_GetProcAddress = orig_GetProcAddress;
+//  REAL_orig_GetProcAddress = orig_GetProcAddress;
 
     TQ84_DEBUG("before hooking GetProcAddress: orig_GetProcAddress = %d", orig_GetProcAddress);
     if (! Mhook_SetHook((PVOID*) &orig_GetProcAddress, hook_GetProcAddress)) {
