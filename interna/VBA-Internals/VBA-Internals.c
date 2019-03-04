@@ -1028,11 +1028,29 @@ HRESULT STDMETHODCALLTYPE hook_classFactory_QueryInterface(void *self, REFIID ri
 
 funcPtr_IDispatch_GetIDsOfNames orig_classFactory_GetIDsOfNames;
 HRESULT STDMETHODCALLTYPE hook_classFactory_GetIDsOfNames(void *self, REFIID riid, LPOLESTR *rgszNames, UINT cNames, LCID lcid, DISPID *rgDispId) { // {
-  TQ84_DEBUG_INDENT_T("hook_classFactory_GetIDsOfNames");
+  int i;
+    char x[500];
+  TQ84_DEBUG_INDENT_T("hook_classFactory_GetIDsOfNames, cNames = %d, lcid = %d", cNames, lcid);
+
+
   HRESULT ret = orig_classFactory_GetIDsOfNames(self, riid, rgszNames, cNames, lcid, rgDispId);
+
+  for (i=0; i<cNames; i++) {
+    wcstombs(x, rgszNames[i], 499);
+    TQ84_DEBUG("%d -> %s, dispid: %d", i, x, rgDispId[i]);
+  }
   return ret;
 
 } // }
+
+funcPtr_IDispatch_Invoke orig_classFactory_Invoke;
+HRESULT STDMETHODCALLTYPE hook_classFactory_Invoke(void *self, DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pvarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr) {
+  TQ84_DEBUG_INDENT_T("hook_classFactory_Invoke, dispidMember = %d", dispidMember);
+
+  HRESULT ret = orig_classFactory_Invoke(self, dispidMember, riid, lcid, wFlags, pDispParams, pvarResult, pExcepInfo, puArgErr);
+
+  return ret;
+}
 
 HRESULT STDMETHODCALLTYPE hook_QueryInterface(void *self, REFIID riid, void **pObj) { // {
   TQ84_DEBUG_INDENT_T("QueryInterface, self = %d", self);
@@ -1214,6 +1232,10 @@ __declspec(dllexport) void __stdcall beforeSettingRootObjectToNothing() { // {
   orig_classFactory_GetIDsOfNames = m_loader->classFactory->vtbl->GetIDsOfNames;
   if (! Mhook_SetHook((PVOID*) &orig_classFactory_GetIDsOfNames, hook_classFactory_GetIDsOfNames)) {
        MessageBox(0, "Sorry, could not hook hook_classFactory_GetIDsOfNames", 0, 0);
+  }
+  orig_classFactory_Invoke = m_loader->classFactory->vtbl->Invoke;
+  if (! Mhook_SetHook((PVOID*) &orig_classFactory_Invoke, hook_classFactory_Invoke)) {
+       MessageBox(0, "Sorry, could not hook hook_classFactory_Invoke", 0, 0);
   }
 
 } // }
