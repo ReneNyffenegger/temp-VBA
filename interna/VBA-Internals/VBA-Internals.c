@@ -327,7 +327,7 @@ HRESULT STDMETHODCALLTYPE hook_IDispatch_Invoke(void *self, DISPID dispidMember,
 
   typedef HRESULT (STDMETHODCALLTYPE *fn_hook)(int p1); // , int p2, int p3, int p4, int p5, int p6, int p7);
 
-typedef HRESULT (STDMETHODCALLTYPE *fn_hook_7)(ERROBJ *p_errObj, int p2); // , int p2, int p3, int p4, int p5, int p6, int p7);
+typedef HRESULT (STDMETHODCALLTYPE *fn_hook_7)(ERROBJ *p_errObj, int *p2); // , int p2, int p3, int p4, int p5, int p6, int p7);
 //typedef HRESULT (*fn_hook)(int p1, int p2, int p3, int p4, int p5, int p6, int p7);
 
 
@@ -341,9 +341,10 @@ typedef HRESULT (STDMETHODCALLTYPE *fn_hook_7)(ERROBJ *p_errObj, int p2); // , i
 
 fn_hook_7 orig_7;
 
-HRESULT STDMETHODCALLTYPE hook_7(ERROBJ* p_errObj, int p2) {
-  TQ84_DEBUG_INDENT_T("hook_7: p_errObj = %d, p2 = %d", p_errObj, p2);
+HRESULT STDMETHODCALLTYPE hook_7(ERROBJ* p_errObj, int *p2) {
+  TQ84_DEBUG_INDENT_T("hook_7: p_errObj = %d, p2 = %d, *p2 = %d", p_errObj, p2, *p2);
   HRESULT ret = orig_7(p_errObj, p2);
+  TQ84_DEBUG("ret = %d, *p2 = %d", ret, *p2);
   return ret;
 }
 
