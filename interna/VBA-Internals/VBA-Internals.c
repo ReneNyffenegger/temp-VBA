@@ -325,14 +325,18 @@ HRESULT STDMETHODCALLTYPE hook_IDispatch_Invoke(void *self, DISPID dispidMember,
   return ret;
 } // }
 
-  typedef HRESULT (STDMETHODCALLTYPE *fn_hook)(int p1); // , int p2, int p3, int p4, int p5, int p6, int p7);
+typedef HRESULT (STDMETHODCALLTYPE *fn_hook_params_1)(ERROBJ *p_errObj); // , int p2, int p3, int p4, int p5, int p6, int p7);
+typedef HRESULT (STDMETHODCALLTYPE *fn_hook)(ERROBJ *p_errObj, int *p2); // , int p2, int p3, int p4, int p5, int p6, int p7);
+typedef HRESULT (STDMETHODCALLTYPE *fn_hook_params_3)(ERROBJ *p_errObj, int *p2, int *p3); // , int p2, int p3, int p4, int p5, int p6, int p7);
+typedef HRESULT (STDMETHODCALLTYPE *fn_hook_params_4)(ERROBJ *p_errObj, int *p2, int *p3, int *p4);
+typedef HRESULT (STDMETHODCALLTYPE *fn_hook_params_5)(ERROBJ *p_errObj, int *p2, int *p3, int *p4, int *p5);
 
 typedef HRESULT (STDMETHODCALLTYPE *fn_hook_7)(ERROBJ *p_errObj, int *p2); // , int p2, int p3, int p4, int p5, int p6, int p7);
 //typedef HRESULT (*fn_hook)(int p1, int p2, int p3, int p4, int p5, int p6, int p7);
 
 
 
-//HRESULT STDMETHODCALLTYPE hook_##n(int p1, int p2, int p3, int p4, int p5, int p6, int p7) { \
+// HRESULT STDMETHODCALLTYPE hook_##n(ERROBJ *p_errObj, int *p2) { \
 
 //  TQ84_DEBUG_INDENT_T("hook_" #n ": p1: %d, p2: %d, p3: %d, p4: %d, p5: %d, p6: %d, p7: %d", p1, p2, p3, p4, p5, p6, p7); \
 
@@ -343,17 +347,64 @@ fn_hook_7 orig_7;
 
 HRESULT STDMETHODCALLTYPE hook_7(ERROBJ* p_errObj, int *p2) {
   TQ84_DEBUG_INDENT_T("hook_7: p_errObj = %d, p2 = %d, *p2 = %d", p_errObj, p2, *p2);
+  TQ84_DEBUG("*p2 = %d", *p2);
   HRESULT ret = orig_7(p_errObj, p2);
   TQ84_DEBUG("ret = %d, *p2 = %d", ret, *p2);
   return ret;
 }
 
 
-#define def_hook_func(n)                  \
-  fn_hook orig_##n;                   \
-HRESULT STDMETHODCALLTYPE hook_##n(int p1) { \
-  TQ84_DEBUG_INDENT_T("hook_" #n ": p1 = %d", p1); \
-  HRESULT ret = orig_##n(p1); \
+#define def_hook_func(n)                   \
+  fn_hook orig_##n;                        \
+HRESULT STDMETHODCALLTYPE hook_##n(ERROBJ *p_errObj, int *p2) { \
+  TQ84_DEBUG_INDENT_T("hook_" #n ": p_errObj = %d, p2 = %d", p_errObj, p2); \
+  TQ84_DEBUG("*p2 = %d", *p2); \
+  HRESULT ret = orig_##n(p_errObj, p2); \
+  TQ84_DEBUG("ret = %d, *p2 = %d", ret, *p2); \
+  return ret; \
+}
+
+#define def_hook_func_params_1(n)                   \
+  fn_hook_params_1 orig_##n;                        \
+HRESULT STDMETHODCALLTYPE hook_##n(ERROBJ *p_errObj) { \
+  TQ84_DEBUG_INDENT_T("hook_" #n ": p_errObj = %d"); \
+  HRESULT ret = orig_##n(p_errObj); \
+  TQ84_DEBUG("ret = %d", ret); \
+  return ret; \
+}
+
+#define def_hook_func_params_3(n)                   \
+  fn_hook_params_3 orig_##n;                        \
+HRESULT STDMETHODCALLTYPE hook_##n(ERROBJ *p_errObj, int *p2, int *p3) { \
+  TQ84_DEBUG_INDENT_T("hook_" #n ": p_errObj = %d, p2 = %d, p3 = %d", p_errObj, p2, p3); \
+  TQ84_DEBUG("*p2 = %d", *p2); \
+  TQ84_DEBUG("*p3 = %d", *p3); \
+  HRESULT ret = orig_##n(p_errObj, p2, p3); \
+  TQ84_DEBUG("ret = %d, *p2 = %d, *p3 = %d", ret, *p2, *p3); \
+  return ret; \
+}
+
+#define def_hook_func_params_4(n)                   \
+  fn_hook_params_4 orig_##n;                        \
+HRESULT STDMETHODCALLTYPE hook_##n(ERROBJ *p_errObj, int *p2, int *p3, int *p4) { \
+  TQ84_DEBUG_INDENT_T("hook_" #n ": p_errObj = %d, p2 = %d, p3 = %d, p4 = %d", p_errObj, p2, p3, p4); \
+  TQ84_DEBUG("*p2 = %d", *p2); \
+  TQ84_DEBUG("*p3 = %d", *p3); \
+/*  TQ84_DEBUG("*p4 = %d", *p4); */ \
+  HRESULT ret = orig_##n(p_errObj, p2, p3, p4); \
+/*  TQ84_DEBUG("ret = %d, *p2 = %d, *p3 = %d, *p4 = %d", ret, *p2, *p3, *p4); */ \
+  return ret; \
+}
+
+#define def_hook_func_params_5(n)                   \
+  fn_hook_params_5 orig_##n;                        \
+HRESULT STDMETHODCALLTYPE hook_##n(ERROBJ *p_errObj, int *p2, int *p3, int *p4, int *p5) { \
+  TQ84_DEBUG_INDENT_T("hook_" #n ": p_errObj = %d, p2 = %d, p3 = %d, p4 = %d, p5 = %d", p_errObj, p2, p3, p4, p5); \
+  TQ84_DEBUG("*p2 = %d", *p2); \
+  TQ84_DEBUG("*p3 = %d", *p3); \
+/*  TQ84_DEBUG("*p4 = %d", *p4); */ \
+  HRESULT ret = orig_##n(p_errObj, p2, p3, p4, p5); \
+/*  TQ84_DEBUG("ret = %d, *p2 = %d, *p3 = %d, *p4 = %d", ret, *p2, *p3, *p4); */ \
   return ret; \
 }
 
@@ -367,9 +418,19 @@ HRESULT STDMETHODCALLTYPE hook_##n(int p1) { \
 
 //def_hook_func(4);
 // def_hook_func( 7);
-// def_hook_func( 8);
-// def_hook_func( 9);
-// def_hook_func(10);
+def_hook_func( 8);
+def_hook_func( 9);
+def_hook_func(10);
+def_hook_func(11);
+def_hook_func(12);
+def_hook_func(13);
+def_hook_func(14);
+def_hook_func(15);
+def_hook_func(16);
+def_hook_func(17);
+def_hook_func_params_1(18);
+def_hook_func(19);
+def_hook_func(20);
 
 
 ERROBJ* CALLBACK hook_rtcErrObj() { // {
@@ -404,8 +465,6 @@ ERROBJ* CALLBACK hook_rtcErrObj() { // {
      TQ84_DEBUG("errObj->GetIDsOfNames    = %d", errObj->vtbl->GetIDsOfNames   );
      TQ84_DEBUG("errObj->Invoke           = %d", errObj->vtbl->Invoke          );
 
-     hook_func( 7);
-//   hook_func( 8);
 //   hook_func( 9);
 //   hook_func(10);
 //   TQ84_DEBUG(orig_j->4                 = %d", 
@@ -417,45 +476,59 @@ ERROBJ* CALLBACK hook_rtcErrObj() { // {
 //     TQ84_DEBUG("errObj->9                = %d", *(((int*) errObj->vtbl) + 9)     );
 //     TQ84_DEBUG("errObj->10               = %d", *(((int*) errObj->vtbl) + 10)     );
 //     TQ84_DEBUG("errObj->11               = %d", *(((int*) errObj->vtbl) + 11)     );
-//     TQ84_DEBUG("errObj->12               = %d", *(((int*) errObj->vtbl) + 12)     );
-//     TQ84_DEBUG("errObj->13               = %d", *(((int*) errObj->vtbl) + 13)     );
-//     TQ84_DEBUG("errObj->14               = %d", *(((int*) errObj->vtbl) + 14)     );
-//     TQ84_DEBUG("errObj->15               = %d", *(((int*) errObj->vtbl) + 15)     );
-//     TQ84_DEBUG("errObj->16               = %d", *(((int*) errObj->vtbl) + 16)     );
-//     TQ84_DEBUG("errObj->17               = %d", *(((int*) errObj->vtbl) + 17)     );
-//     TQ84_DEBUG("errObj->18               = %d", *(((int*) errObj->vtbl) + 18)     );
-//     TQ84_DEBUG("errObj->19               = %d", *(((int*) errObj->vtbl) + 19)     );
-//     TQ84_DEBUG("errObj->20               = %d", *(((int*) errObj->vtbl) + 20)     );
-//     TQ84_DEBUG("errObj->21               = %d", *(((int*) errObj->vtbl) + 21)     );
-//     TQ84_DEBUG("errObj->22               = %d", *(((int*) errObj->vtbl) + 22)     );
-//     TQ84_DEBUG("errObj->23               = %d", *(((int*) errObj->vtbl) + 23)     );
-//     TQ84_DEBUG("errObj->24               = %d", *(((int*) errObj->vtbl) + 24)     );
-//     TQ84_DEBUG("errObj->25               = %d", *(((int*) errObj->vtbl) + 25)     );
-//     TQ84_DEBUG("errObj->26               = %d", *(((int*) errObj->vtbl) + 26)     );
-//     TQ84_DEBUG("errObj->27               = %d", *(((int*) errObj->vtbl) + 27)     );
-//     TQ84_DEBUG("errObj->28               = %d", *(((int*) errObj->vtbl) + 28)     );
-//     TQ84_DEBUG("errObj->29               = %d", *(((int*) errObj->vtbl) + 29)     );
-//     TQ84_DEBUG("errObj->30               = %d", *(((int*) errObj->vtbl) + 30)     );
-//     TQ84_DEBUG("errObj->31               = %d", *(((int*) errObj->vtbl) + 31)     );
-//     TQ84_DEBUG("errObj->32               = %d", *(((int*) errObj->vtbl) + 32)     );
-//     TQ84_DEBUG("errObj->33               = %d", *(((int*) errObj->vtbl) + 33)     );
-//     TQ84_DEBUG("errObj->34               = %d", *(((int*) errObj->vtbl) + 34)     );
-//     TQ84_DEBUG("errObj->35               = %d", *(((int*) errObj->vtbl) + 35)     );
-//     TQ84_DEBUG("errObj->36               = %d", *(((int*) errObj->vtbl) + 36)     );
-//     TQ84_DEBUG("errObj->37               = %d", *(((int*) errObj->vtbl) + 37)     );
-//     TQ84_DEBUG("errObj->38               = %d", *(((int*) errObj->vtbl) + 38)     );
-//     TQ84_DEBUG("errObj->39               = %d", *(((int*) errObj->vtbl) + 39)     );
-//     TQ84_DEBUG("errObj->40               = %d", *(((int*) errObj->vtbl) + 40)     );
-//     TQ84_DEBUG("errObj->41               = %d", *(((int*) errObj->vtbl) + 41)     );
-//     TQ84_DEBUG("errObj->42               = %d", *(((int*) errObj->vtbl) + 42)     );
-//     TQ84_DEBUG("errObj->43               = %d", *(((int*) errObj->vtbl) + 43)     );
-//     TQ84_DEBUG("errObj->44               = %d", *(((int*) errObj->vtbl) + 44)     );
-//     TQ84_DEBUG("errObj->45               = %d", *(((int*) errObj->vtbl) + 45)     );
-//     TQ84_DEBUG("errObj->46               = %d", *(((int*) errObj->vtbl) + 46)     );
-//     TQ84_DEBUG("errObj->47               = %d", *(((int*) errObj->vtbl) + 47)     );
-//     TQ84_DEBUG("errObj->48               = %d", *(((int*) errObj->vtbl) + 48)     );
-//     TQ84_DEBUG("errObj->49               = %d", *(((int*) errObj->vtbl) + 49)     ); // }
+       TQ84_DEBUG("errObj->12               = %d", *(((int*) errObj->vtbl) + 12)     );
+       TQ84_DEBUG("errObj->13               = %d", *(((int*) errObj->vtbl) + 13)     );
+       TQ84_DEBUG("errObj->14               = %d", *(((int*) errObj->vtbl) + 14)     );
+       TQ84_DEBUG("errObj->15               = %d", *(((int*) errObj->vtbl) + 15)     );
+       TQ84_DEBUG("errObj->16               = %d", *(((int*) errObj->vtbl) + 16)     );
+       TQ84_DEBUG("errObj->17               = %d", *(((int*) errObj->vtbl) + 17)     );
+       TQ84_DEBUG("errObj->18               = %d", *(((int*) errObj->vtbl) + 18)     );
+       TQ84_DEBUG("errObj->19               = %d", *(((int*) errObj->vtbl) + 19)     );
+       TQ84_DEBUG("errObj->20               = %d", *(((int*) errObj->vtbl) + 20)     );
+       TQ84_DEBUG("errObj->21               = %d", *(((int*) errObj->vtbl) + 21)     );
+       TQ84_DEBUG("errObj->22               = %d", *(((int*) errObj->vtbl) + 22)     );
+       TQ84_DEBUG("errObj->23               = %d", *(((int*) errObj->vtbl) + 23)     );
+       TQ84_DEBUG("errObj->24               = %d", *(((int*) errObj->vtbl) + 24)     );
+       TQ84_DEBUG("errObj->25               = %d", *(((int*) errObj->vtbl) + 25)     );
+       TQ84_DEBUG("errObj->26               = %d", *(((int*) errObj->vtbl) + 26)     );
+       TQ84_DEBUG("errObj->27               = %d", *(((int*) errObj->vtbl) + 27)     );
+       TQ84_DEBUG("errObj->28               = %d", *(((int*) errObj->vtbl) + 28)     );
+       TQ84_DEBUG("errObj->29               = %d", *(((int*) errObj->vtbl) + 29)     );
+       TQ84_DEBUG("errObj->30               = %d", *(((int*) errObj->vtbl) + 30)     );
+       TQ84_DEBUG("errObj->31               = %d", *(((int*) errObj->vtbl) + 31)     );
+       TQ84_DEBUG("errObj->32               = %d", *(((int*) errObj->vtbl) + 32)     );
+       TQ84_DEBUG("errObj->33               = %d", *(((int*) errObj->vtbl) + 33)     );
+       TQ84_DEBUG("errObj->34               = %d", *(((int*) errObj->vtbl) + 34)     );
+       TQ84_DEBUG("errObj->35               = %d", *(((int*) errObj->vtbl) + 35)     );
+       TQ84_DEBUG("errObj->36               = %d", *(((int*) errObj->vtbl) + 36)     );
+       TQ84_DEBUG("errObj->37               = %d", *(((int*) errObj->vtbl) + 37)     );
+       TQ84_DEBUG("errObj->38               = %d", *(((int*) errObj->vtbl) + 38)     );
+       TQ84_DEBUG("errObj->39               = %d", *(((int*) errObj->vtbl) + 39)     );
+       TQ84_DEBUG("errObj->40               = %d", *(((int*) errObj->vtbl) + 40)     );
+       TQ84_DEBUG("errObj->41               = %d", *(((int*) errObj->vtbl) + 41)     );
+       TQ84_DEBUG("errObj->42               = %d", *(((int*) errObj->vtbl) + 42)     );
+       TQ84_DEBUG("errObj->43               = %d", *(((int*) errObj->vtbl) + 43)     );
+       TQ84_DEBUG("errObj->44               = %d", *(((int*) errObj->vtbl) + 44)     );
+       TQ84_DEBUG("errObj->45               = %d", *(((int*) errObj->vtbl) + 45)     );
+       TQ84_DEBUG("errObj->46               = %d", *(((int*) errObj->vtbl) + 46)     );
+       TQ84_DEBUG("errObj->47               = %d", *(((int*) errObj->vtbl) + 47)     );
+       TQ84_DEBUG("errObj->48               = %d", *(((int*) errObj->vtbl) + 48)     );
+       TQ84_DEBUG("errObj->49               = %d", *(((int*) errObj->vtbl) + 49)     ); // }
 
+     hook_func( 7);
+     hook_func( 8);
+     hook_func( 9);
+     hook_func(10);
+     hook_func(11);
+     hook_func(12);
+     hook_func(13);
+     hook_func(14);
+     hook_func(15);
+     hook_func(16);
+     hook_func(17);
+     hook_func(18);
+     hook_func(19);
+     hook_func(20);
 //   orig_errObj_QueryInterface = errObj->QueryInterface;
      orig_errObj_AddRef         = errObj->vtbl->AddRef;
      orig_errObj_QueryInterface = errObj->vtbl->QueryInterface;
