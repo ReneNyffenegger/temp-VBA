@@ -54,6 +54,11 @@ typedef struct {
 ERROBJ;
 
 typedef struct {
+  IDispatch_vTable * vtbl;
+}
+GUTS_OBJ_36;
+
+typedef struct {
     
   long *m_00;
   long *m_01;
@@ -91,7 +96,8 @@ typedef struct {
   long *m_33;
   long *m_34;
   long *m_35;
-  long *m_36;
+//  long *m_36;
+  GUTS_OBJ_36 *guts_obj_36;
   long *m_37;
   long *m_38;
   long *m_39;
@@ -169,7 +175,16 @@ void printGuts(VBA_guts* guts) {
   TQ84_DEBUG("guts->m_33   = %d,                           ", guts->m_33    );
   TQ84_DEBUG("guts->m_34   = %d,                           ", guts->m_34    );
   TQ84_DEBUG("guts->m_35   = %d,                           ", guts->m_35    );
-  TQ84_DEBUG("guts->m_36   = %d,                           ", guts->m_36    );
+  TQ84_DEBUG("guts->guts_obj_36 = %d                       ", guts->guts_obj_36    );
+
+  TQ84_DEBUG("guts->guts_obj_36->vtbl->QueryInterface   = %d            ", guts->guts_obj_36->vtbl->QueryInterface);
+  TQ84_DEBUG("guts->guts_obj_36->vtbl->AddRef           = %d            ", guts->guts_obj_36->vtbl->AddRef);
+  TQ84_DEBUG("guts->guts_obj_36->vtbl->Release          = %d            ", guts->guts_obj_36->vtbl->Release);
+  TQ84_DEBUG("guts->guts_obj_36->vtbl->GetTypeInfoCount = %d            ", guts->guts_obj_36->vtbl->GetTypeInfoCount);
+  TQ84_DEBUG("guts->guts_obj_36->vtbl->GetTypeInfo      = %d            ", guts->guts_obj_36->vtbl->GetTypeInfo);
+  TQ84_DEBUG("guts->guts_obj_36->vtbl->GetIDsOfNames    = %d            ", guts->guts_obj_36->vtbl->GetIDsOfNames);
+  TQ84_DEBUG("guts->guts_obj_36->vtbl->Invoke           = %d            ", guts->guts_obj_36->vtbl->Invoke);
+
   TQ84_DEBUG("guts->m_37   = %d,                           ", guts->m_37    );
   TQ84_DEBUG("guts->m_38   = %d,                           ", guts->m_38    );
   TQ84_DEBUG("guts->m_39   = %d,                           ", guts->m_39    );
