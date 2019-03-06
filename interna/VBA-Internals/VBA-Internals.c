@@ -1009,19 +1009,36 @@ ERROBJ* CALLBACK hook_rtcErrObj() { // {
        TQ84_DEBUG("errObj->19               = %d", *(((int*) errObj->vtbl) + 19)     );
        TQ84_DEBUG("errObj->20               = %d", *(((int*) errObj->vtbl) + 20)     );
        TQ84_DEBUG("errObj->21               = %d", *(((int*) errObj->vtbl) + 21)     );
-       TQ84_DEBUG("errObj->22               = %d", *(((int*) errObj->vtbl) + 22)     );
-       TQ84_DEBUG("errObj->23               = %d", *(((int*) errObj->vtbl) + 23)     );
-       TQ84_DEBUG("errObj->24               = %d", *(((int*) errObj->vtbl) + 24)     );
-       TQ84_DEBUG("errObj->25               = %d", *(((int*) errObj->vtbl) + 25)     );
+
+//     TQ84_DEBUG("errObj->22               = %d", *(((int*) errObj->vtbl) + 22)     );
+       printVal("errObj->vtbl->m_22", (long)  errObj->vtbl->m_22);
+
+//     TQ84_DEBUG("errObj->23               = %d", *(((int*) errObj->vtbl) + 23)     );
+       printVal("errObj->vtbl->m_23", (long)  errObj->vtbl->m_23);
+
+//     TQ84_DEBUG("errObj->24               = %d", *(((int*) errObj->vtbl) + 24)     );
+       printVal("errObj->vtbl->m_24", (long)  errObj->vtbl->m_24);
+
+
+//     TQ84_DEBUG("errObj->25               = %d", *(((int*) errObj->vtbl) + 25)     );
+       printVal("errObj->vtbl->m_25", (long)  errObj->vtbl->m_25);
+
        TQ84_DEBUG("errObj->26               = %d", *(((int*) errObj->vtbl) + 26)     );
        TQ84_DEBUG("errObj->vtbl->m_26       = %d", *(        errObj->vtbl->m_26     ));
        printVal("errObj->vtbl->m_26", (long)  errObj->vtbl->m_26);
        TQ84_DEBUG("errObj->27               = %d", *(((int*) errObj->vtbl) + 27)     );
        TQ84_DEBUG("errObj->vtbl->m_27       = %d", *(        errObj->vtbl->m_27     ));
        printVal("errObj->vtbl->m_27", (long)  errObj->vtbl->m_27);
-       TQ84_DEBUG("errObj->28               = %d", *(((int*) errObj->vtbl) + 28)     );
-       TQ84_DEBUG("errObj->29               = %d", *(((int*) errObj->vtbl) + 29)     );
-       TQ84_DEBUG("errObj->30               = %d", *(((int*) errObj->vtbl) + 30)     );
+
+//     TQ84_DEBUG("errObj->28               = %d", *(((int*) errObj->vtbl) + 28)     );
+       printVal("errObj->vtbl->m_28", (long)  errObj->vtbl->m_28);
+
+//     TQ84_DEBUG("errObj->29               = %d", *(((int*) errObj->vtbl) + 29)     );
+       printVal("errObj->vtbl->m_29", (long)  errObj->vtbl->m_29);
+
+//     TQ84_DEBUG("errObj->30               = %d", *(((int*) errObj->vtbl) + 30)     );
+       printVal("errObj->vtbl->m_30", (long)  errObj->vtbl->m_30);
+
        TQ84_DEBUG("errObj->31               = %d", *(((int*) errObj->vtbl) + 31)     );
        TQ84_DEBUG("errObj->vtbl->m_31       = %d", *(        errObj->vtbl->m_31     ));
        printVal("errObj->vtbl + 31", (long) (((int*) errObj->vtbl) + 31));
