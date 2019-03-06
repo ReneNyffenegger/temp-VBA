@@ -47,16 +47,12 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr);
 
 // --------------------------------------------------------------------
 
-
 typedef struct {
   IDispatch_vTable * vtbl;
 }
 ERROBJ;
 
-typedef struct {
-  IDispatch_vTable * vtbl;
-}
-GUTS_OBJ_36;
+typedef HRESULT (STDMETHODCALLTYPE *fn_guts_m_36)(int *p1, int *p2, int *p3);
 
 typedef struct {
     
@@ -97,7 +93,8 @@ typedef struct {
   long *m_34;
   long *m_35;
 //  long *m_36;
-  GUTS_OBJ_36 *guts_obj_36;
+  fn_guts_m_36          fn_m_36;
+//GUTS_OBJ_36 *guts_obj_36;
   long *m_37;
   long *m_38;
   long *m_39;
@@ -113,6 +110,26 @@ typedef struct {
   long *m_49;
 
 } VBA_guts;
+
+typedef HRESULT (STDMETHODCALLTYPE *fn_hook_params_1)(ERROBJ *p_errObj); // , int p2, int p3, int p4, int p5, int p6, int p7);
+typedef HRESULT (STDMETHODCALLTYPE *fn_hook)(ERROBJ *p_errObj, int *p2); // , int p2, int p3, int p4, int p5, int p6, int p7);
+typedef HRESULT (STDMETHODCALLTYPE *fn_hook_params_3)(ERROBJ *p_errObj, int *p2, int *p3); // , int p2, int p3, int p4, int p5, int p6, int p7);
+typedef HRESULT (STDMETHODCALLTYPE *fn_hook_params_4)(ERROBJ *p_errObj, int *p2, int *p3, int *p4);
+typedef HRESULT (STDMETHODCALLTYPE *fn_hook_params_5)(ERROBJ *p_errObj, int *p2, int *p3, int *p4, int *p5);
+
+typedef HRESULT   (STDMETHODCALLTYPE *fn_hook_07)(ERROBJ *p_errObj, int *p2);
+typedef HRESULT   (STDMETHODCALLTYPE *fn_hook_11)(ERROBJ *p_errObj, int *p2);
+typedef VBA_guts* (STDMETHODCALLTYPE *fn_hook_18)(ERROBJ *p_errObj);
+typedef HRESULT   (STDMETHODCALLTYPE *fn_hook_19)(ERROBJ *p_errObj, int *p2);
+//typedef HRESULT (*fn_hook)(int p1, int p2, int p3, int p4, int p5, int p6, int p7);
+
+
+// typedef struct {
+//   IDispatch_vTable * vtbl;
+// }
+// GUTS_OBJ_36;
+
+
 
 VBA_guts* g_VBA_guts = NULL;
 
@@ -130,6 +147,16 @@ void printVal(const char* txt, long val) {
     addr = val;
   }
 
+}
+
+
+fn_guts_m_36 orig_guts_m_36 = NULL;
+HRESULT STDMETHODCALLTYPE hook_guts_m_36(int *p1, int *p2, int *p3) { 
+  TQ84_DEBUG_INDENT_T("hook_guts_m_36: p1 = %d, p2 = %d, p3 = %d", p1, p2, p3); 
+//TQ84_DEBUG("*p2 = %d", *p2); 
+  HRESULT ret = orig_guts_m_36(p1, p2, p3); 
+  TQ84_DEBUG("ret = %d");
+  return ret; 
 }
 
 void printGuts(VBA_guts* guts) {
@@ -175,15 +202,24 @@ void printGuts(VBA_guts* guts) {
   TQ84_DEBUG("guts->m_33   = %d,                           ", guts->m_33    );
   TQ84_DEBUG("guts->m_34   = %d,                           ", guts->m_34    );
   TQ84_DEBUG("guts->m_35   = %d,                           ", guts->m_35    );
-  TQ84_DEBUG("guts->guts_obj_36 = %d                       ", guts->guts_obj_36    );
+  TQ84_DEBUG("guts->fn_m_36 = %d                         ", guts->fn_m_36    );
 
-  TQ84_DEBUG("guts->guts_obj_36->vtbl->QueryInterface   = %d            ", guts->guts_obj_36->vtbl->QueryInterface);
-  TQ84_DEBUG("guts->guts_obj_36->vtbl->AddRef           = %d            ", guts->guts_obj_36->vtbl->AddRef);
-  TQ84_DEBUG("guts->guts_obj_36->vtbl->Release          = %d            ", guts->guts_obj_36->vtbl->Release);
-  TQ84_DEBUG("guts->guts_obj_36->vtbl->GetTypeInfoCount = %d            ", guts->guts_obj_36->vtbl->GetTypeInfoCount);
-  TQ84_DEBUG("guts->guts_obj_36->vtbl->GetTypeInfo      = %d            ", guts->guts_obj_36->vtbl->GetTypeInfo);
-  TQ84_DEBUG("guts->guts_obj_36->vtbl->GetIDsOfNames    = %d            ", guts->guts_obj_36->vtbl->GetIDsOfNames);
-  TQ84_DEBUG("guts->guts_obj_36->vtbl->Invoke           = %d            ", guts->guts_obj_36->vtbl->Invoke);
+  if (guts->fn_m_36 && !orig_guts_m_36) {
+
+    orig_guts_m_36 = guts->fn_m_36;
+
+    if (! Mhook_SetHook((PVOID*) &orig_guts_m_36, (PVOID) hook_guts_m_36)) { \
+         MessageBox(0, "Sorry, could not hook thing_18_0", 0, 0); \
+    } 
+
+//   TQ84_DEBUG("guts->guts_obj_36->vtbl->QueryInterface   = %d            ", guts->guts_obj_36->vtbl->QueryInterface);
+//   TQ84_DEBUG("guts->guts_obj_36->vtbl->AddRef           = %d            ", guts->guts_obj_36->vtbl->AddRef);
+//   TQ84_DEBUG("guts->guts_obj_36->vtbl->Release          = %d            ", guts->guts_obj_36->vtbl->Release);
+//   TQ84_DEBUG("guts->guts_obj_36->vtbl->GetTypeInfoCount = %d            ", guts->guts_obj_36->vtbl->GetTypeInfoCount);
+//   TQ84_DEBUG("guts->guts_obj_36->vtbl->GetTypeInfo      = %d            ", guts->guts_obj_36->vtbl->GetTypeInfo);
+//   TQ84_DEBUG("guts->guts_obj_36->vtbl->GetIDsOfNames    = %d            ", guts->guts_obj_36->vtbl->GetIDsOfNames);
+//   TQ84_DEBUG("guts->guts_obj_36->vtbl->Invoke           = %d            ", guts->guts_obj_36->vtbl->Invoke);
+  }
 
   TQ84_DEBUG("guts->m_37   = %d,                           ", guts->m_37    );
   TQ84_DEBUG("guts->m_38   = %d,                           ", guts->m_38    );
@@ -468,17 +504,6 @@ HRESULT STDMETHODCALLTYPE hook_IDispatch_Invoke(void *self, DISPID dispidMember,
   return ret;
 } // }
 
-typedef HRESULT (STDMETHODCALLTYPE *fn_hook_params_1)(ERROBJ *p_errObj); // , int p2, int p3, int p4, int p5, int p6, int p7);
-typedef HRESULT (STDMETHODCALLTYPE *fn_hook)(ERROBJ *p_errObj, int *p2); // , int p2, int p3, int p4, int p5, int p6, int p7);
-typedef HRESULT (STDMETHODCALLTYPE *fn_hook_params_3)(ERROBJ *p_errObj, int *p2, int *p3); // , int p2, int p3, int p4, int p5, int p6, int p7);
-typedef HRESULT (STDMETHODCALLTYPE *fn_hook_params_4)(ERROBJ *p_errObj, int *p2, int *p3, int *p4);
-typedef HRESULT (STDMETHODCALLTYPE *fn_hook_params_5)(ERROBJ *p_errObj, int *p2, int *p3, int *p4, int *p5);
-
-typedef HRESULT   (STDMETHODCALLTYPE *fn_hook_07)(ERROBJ *p_errObj, int *p2);
-typedef HRESULT   (STDMETHODCALLTYPE *fn_hook_11)(ERROBJ *p_errObj, int *p2);
-typedef VBA_guts* (STDMETHODCALLTYPE *fn_hook_18)(ERROBJ *p_errObj);
-typedef HRESULT   (STDMETHODCALLTYPE *fn_hook_19)(ERROBJ *p_errObj, int *p2);
-//typedef HRESULT (*fn_hook)(int p1, int p2, int p3, int p4, int p5, int p6, int p7);
 
 
 
