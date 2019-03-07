@@ -48,6 +48,11 @@ LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS exPtr);
 // --------------------------------------------------------------------
 
 
+struct VBA_guts_;
+
+struct ERROBJ_;
+typedef struct VBA_guts_* (STDMETHODCALLTYPE *fn_hook_18)(struct ERROBJ_ *p_errObj);
+
 typedef struct {
    IDISPATCH_VTABLE
    int  *m_07;
@@ -105,7 +110,7 @@ typedef struct {
    int  *m_59;
 } VBA_ErrObj_vTable;
 
-typedef struct {
+typedef struct ERROBJ_ {
   VBA_ErrObj_vTable *vtbl;
 //  IDispatch_vTable * vtbl;
 //   iDispatch
@@ -118,7 +123,7 @@ typedef HRESULT (STDMETHODCALLTYPE *fn_guts_m_81)(int *p1);
 typedef HRESULT (STDMETHODCALLTYPE *fn_guts_m_85)(int *p1);
 typedef HRESULT (STDMETHODCALLTYPE *fn_guts_m_87)(int *p1);
 
-typedef struct {
+typedef struct VBA_guts_ {
     
   long *m_00;
   long *m_01;
@@ -227,7 +232,6 @@ typedef HRESULT (STDMETHODCALLTYPE *fn_hook_params_5)(ERROBJ *p_errObj, int *p2,
 
 typedef HRESULT   (STDMETHODCALLTYPE *fn_hook_07)(ERROBJ *p_errObj, int *p2);
 typedef HRESULT   (STDMETHODCALLTYPE *fn_hook_11)(ERROBJ *p_errObj, int *p2);
-typedef VBA_guts* (STDMETHODCALLTYPE *fn_hook_18)(ERROBJ *p_errObj);
 typedef HRESULT   (STDMETHODCALLTYPE *fn_hook_19)(ERROBJ *p_errObj, int *p2);
 //typedef HRESULT (*fn_hook)(int p1, int p2, int p3, int p4, int p5, int p6, int p7);
 
@@ -317,7 +321,8 @@ void printGuts(VBA_guts* guts) {
   printVal("t", (long)t);
 
   TQ84_DEBUG("guts         = %d,                           ", guts          );
-  TQ84_DEBUG("guts->m_00   = %d,                           ", guts->m_00    );
+//TQ84_DEBUG("guts->m_00   = %d,                           ", guts->m_00    );
+  printVal("guts->m_00", (long) guts->m_00);
   TQ84_DEBUG("guts->m_01   = %d,                           ", guts->m_01    );
   TQ84_DEBUG("guts->m_02   = %d,                           ", guts->m_02    );
   printVal("guts->m_03", (long) guts->m_03);
