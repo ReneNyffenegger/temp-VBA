@@ -1,0 +1,3 @@
+[submodule "interna/4th/lib-WinAPI"]
+	path = interna/4th/lib-WinAPI
+	url = https://github.com/ReneNyffenegger/lib-WinAPI
