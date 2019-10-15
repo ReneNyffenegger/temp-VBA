@@ -15,6 +15,18 @@ public function spellNumber (                     _
            optional de_ss  as string = "ss"       _
            ) as string
 
+
+    if num = 0 then ' {
+       if lang = "de" then
+          spellNumber = "null"
+       elseif lang = "en" then
+          spellNumber = "zero"
+       else
+          spellNumber = "0"
+       end if
+       exit function
+    end if ' }
+
     dim numText as string
     numText = num
 
