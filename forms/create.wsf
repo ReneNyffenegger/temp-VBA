@@ -1,0 +1,28 @@
+<job>
+<script language="VBScript" src="..\VBS-MS-Office-App-Creator\create-MS-Office-app.vbs" />
+<script language="VBScript">
+
+   option explicit
+
+   dim app
+   dim xls
+   set xls = createOfficeApp("excel", currentDir() & "created.xlsm")
+
+   if xls is nothing then ' {
+      wscript.echo("Could not create excel worksheet.")
+      wscript.quit(-1)
+   end if ' }
+
+   set app = xls.application
+
+   addReference app, "{0D452EE1-E08F-101A-852E-02608C4D0BB4}", 2, 0 ' MS Forms
+
+   insertModule app, currentDir() & "create-ex-2.vb", "funcs", 1
+
+   app.run "main"
+
+   xls.save
+
+   createObject("wScript.Shell").appActivate(app.caption)
+
+</script> </job>

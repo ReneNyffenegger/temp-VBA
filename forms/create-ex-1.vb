@@ -3,7 +3,7 @@
 '
 option explicit
 
-sub CreateUserForm()
+sub main()
 
 ' dim myForm     as object ' msForms.userForm
   dim myForm     as VBIDE.VBComponent
