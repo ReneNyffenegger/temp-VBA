@@ -5,12 +5,36 @@ option explicit
 
 sub main()
 
-' dim myForm     as object ' msForms.userForm
-  dim myForm     as VBIDE.VBComponent
-  dim myDesigner as msForms.userForm
-  dim NewFrame   as MSForms.Frame
+ 
+ '
+' We don't wont no flashing screent while creating the form:
+'
+  application.VBE.mainWindow.visible = false
+  
+  dim frmVbComp     as VBIDE.vbComponent
+  dim frmDesign     as msForms.userForm
 
-  dim NewButton as MSForms.CommandButton
+  set frmVbComp = thisWorkbook.vbProject.VBComponents.add(vbext_ct_MSForm)
+  set frmDesign = frmVbComp.designer
+  
+  with frmVbComp
+      .properties("caption") = "The dynamically created form"
+      .properties("width"  ) =  400
+      .properties("height" ) =  300
+  end with
+
+' dim p as variant
+' for each p in frmVbComp.properties ' {
+'     on error resume next
+'     debug.print(p.name & ": " & typename(p.value))
+'     on error goto 0
+' next p ' }
+
+
+  dim fram          as msForms.frame
+
+  dim btn           as msForms.commandButton
+
  'dim NewComboBox as MSForms.ComboBox
   dim NewListBox as MSForms.ListBox
  'dim NewTextBox as MSForms.TextBox
@@ -20,68 +44,62 @@ sub main()
   dim X    as integer
 ' dim line as integer
   
-  'This is to stop screen flashing while creating form
-  application.VBE.MainWindow.Visible = False
   
-  set myForm = ThisWorkbook.VBProject.VBComponents.add(vbext_ct_MSForm)
-  
-  'Create the User Form
-  with myForm
-      .properties("Caption") = "New Form"
-      .properties("Width"  ) = 300
-      .properties("Height" ) = 270
-  end with
-  
-  'Create ListBox
-  set myDesigner = myForm.designer
-' set NewListBox = myForm.Designer.Controls.add("Forms.listbox.1")
-  set NewListBox = myDesigner.Controls.add("Forms.listbox.1")
+' Create ListBox
+
+' set NewListBox = frmVbComp.Designer.Controls.add("Forms.listbox.1")
+  set NewListBox = frmDesign.Controls.add("Forms.listbox.1")
   with newListBox
-      .Name          ="lst_1"
-      .Top           =  10
-      .Left          =  10
-      .Width         = 150
-      .Height        = 230
-      .Font.Size     =   8
-      .Font.Name     ="Tahoma"
-'     .BorderStyle   = fmBorderStyleOpaque
-      .SpecialEffect = fmSpecialEffectSunken
+      .name          ="lst_1"
+      .top           =  10
+      .left          =  10
+      .width         = 150
+      .height        = 230
+      .font.Size     =   8
+      .font.Name     ="Tahoma"
+'     .borderStyle   = fmBorderStyleOpaque
+      .specialEffect = fmSpecialEffectSunken
   end with
+
+  frmVbComp.activate
+  newListBox.addItem "first"
+  newListBox.addItem "second"
+  newListBox.addItem "third"
   
   'Create CommandButton Create
-' set NewButton = myForm.Designer.Controls.add("Forms.commandbutton.1")
-  set NewButton = myDesigner.Controls.add("Forms.commandbutton.1")
-  with NewButton
-      .name         ="cmd_1"
-      .caption      ="clickMe"
-      .accelerator  ="M"
+
+  set btn = frmDesign.Controls.add("Forms.commandbutton.1")
+  with btn
+      .name         = "btn"
+      .caption      = "clickMe"
+      .accelerator  = "M"
       .top          =  10
       .left         = 200
       .width        =  66
       .height       =  20
-      .font.Size    =   8
-      .font.Name    ="Tahoma"
+      .font.size    =   8
+    ' .font.name    ="Tahoma"
       .backStyle    = fmBackStyleOpaque
   end  with
   
-  'add code for listBox
+ ' add code for listBox
 ' lstBoxData = "Data 1,Data 2,Data 3,Data 4"
-  myForm.codeModule.InsertLines  1, "Private sub UserForm_Initialize()"
-  myForm.codeModule.InsertLines  2, "   me.lst_1.addItem ""Data 1"" "
-  myForm.codeModule.InsertLines  3, "   me.lst_1.addItem ""Data 2"" "
-  myForm.codeModule.InsertLines  4, "   me.lst_1.addItem ""Data 3"" "
-  myForm.codeModule.InsertLines  5, "end sub"
+  frmVbComp.codeModule.InsertLines  1, "private sub userForm_Initialize()"
+  frmVbComp.codeModule.InsertLines  2, "   me.lst_1.addItem ""Item one"""
+  frmVbComp.codeModule.InsertLines  3, "   me.lst_1.addItem ""Item two"""
+  frmVbComp.codeModule.InsertLines  4, "   me.lst_1.addItem ""Item three"""
+  frmVbComp.codeModule.InsertLines  5, "end sub"
   
   'add code for Comand Button
-  myForm.codeModule.InsertLines  6, "Private sub cmd_1_Click()"
-  myForm.codeModule.InsertLines  7, "   If me.lst_1.text <>"""" Then"
-  myForm.codeModule.InsertLines  8, "      msgbox (""You selected item: "" & me.lst_1.text )"
-  myForm.codeModule.InsertLines  9, "   end If"
-  myForm.codeModule.InsertLines 10, "end sub"
+  frmVbComp.codeModule.InsertLines  6, "Private sub btn_Click()"
+  frmVbComp.codeModule.InsertLines  7, "   If me.lst_1.text <>"""" Then"
+  frmVbComp.codeModule.InsertLines  8, "      msgbox (""You selected item: "" & me.lst_1.text )"
+  frmVbComp.codeModule.InsertLines  9, "   end If"
+  frmVbComp.codeModule.InsertLines 10, "end sub"
   'Show the form
-  VBA.UserForms.add(myForm.Name).Show
+  VBA.UserForms.add(frmVbComp.Name).Show
   
   'Delete the form (Optional)
-  'ThisWorkbook.VBProject.VBComponents.Remove myForm
+  'ThisWorkbook.VBProject.VBComponents.Remove frmVbComp
 end sub
 

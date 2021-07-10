@@ -17,7 +17,7 @@
 
    addReference app, "{0D452EE1-E08F-101A-852E-02608C4D0BB4}", 2, 0 ' MS Forms
 
-   insertModule app, currentDir() & "create-ex-2.vb", "funcs", 1
+   insertModule app, currentDir() & "create-ex-1.vb", "funcs", 1
 
    app.run "main"
 
