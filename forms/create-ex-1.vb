@@ -21,6 +21,7 @@ sub main() ' {
       .properties("caption") = "The dynamically created form"
       .properties("width"  ) =  400
       .properties("height" ) =  300
+      .properties("name"   ) = "tq84Form"
   end with
 
 ' dim p as variant
@@ -101,13 +102,25 @@ sub main() ' {
          "end sub"
 
   end with ' }
+
+  showForm
+
+' dim f as object
+' set f = new tq84Form
   
 
  ' Show the form
-
-   VBA.UserForms.add(frmVbComp.Name).Show
+ ' VBA.UserForms.add(frmVbComp.Name).Show
+ '     UserForms(frmVbComp.name).show
   
   'Delete the form (Optional)
   'ThisWorkbook.VBProject.VBComponents.Remove frmVbComp
+end sub ' }
+
+sub showForm() ' {
+    dim o as object
+    set o = userForms.add("tq84Form")
+    o.show
+
 end sub ' }
 
