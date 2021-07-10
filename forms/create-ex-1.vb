@@ -1,13 +1,14 @@
 '
+'  Inspired and mostly copy-adapted from
 '  https://stackoverflow.com/a/11541912/180275
 '
 option explicit
 
 sub main() ' {
  
+ ' 
+ ' We don't wont no flashing screent while creating the form:
  '
-' We don't wont no flashing screent while creating the form:
-'
   application.VBE.mainWindow.visible = false
   
   dim frmVbComp     as VBIDE.vbComponent
@@ -83,41 +84,28 @@ sub main() ' {
 
   with frmVbComp.codeModule ' {
 
-      .insertLines .countOfLines, "option explicit"
+      .insertLines .countOfLines+1, "option explicit"
 
-      .insertLines .countOfLines,  _
-         "private sub userForm_initialize()"   & chr(10) & _
-         "   me.lst_1.addItem ""Item one"""    & chr(10) & _
-         "   me.lst_1.addItem ""Item two"""    & chr(10) & _
-         "   me.lst_1.addItem ""Item three"""  & chr(10) & _
+      .insertLines .countOfLines+1,                                  _
+         "private sub userForm_initialize()"             & chr(10) & _
+         "   me.lst_1.addItem ""Item one"""              & chr(10) & _
+         "   me.lst_1.addItem ""Item two"""              & chr(10) & _
+         "   me.lst_1.addItem ""Item three"""            & chr(10) & _
          "end sub"
 
-      .insertLines .countOfLines,  _
+      .insertLines .countOfLines+1,                                  _
          "private sub btn_click()"                       & chr(10) & _
          "   if me.lst_1.text <> """" then"              & chr(10) & _
-         "      msgBox ""selected: "" &  me.lst_1.txt"   & chr(10) & _
-         "   me.lst_1.addItem ""Item three"""            & chr(10) & _
+         "      msgBox ""selected: "" &  me.lst_1.text"  & chr(10) & _
+         "   end if"                                     & chr(10) & _
          "end sub"
 
   end with ' }
   
- ' add code for listBox
-' lstBoxData = "Data 1,Data 2,Data 3,Data 4"
-' frmVbComp.codeModule.InsertLines  1, "private sub userForm_Initialize()"
-' frmVbComp.codeModule.InsertLines  2, "   me.lst_1.addItem ""Item one"""
-' frmVbComp.codeModule.InsertLines  3, "   me.lst_1.addItem ""Item two"""
-' frmVbComp.codeModule.InsertLines  4, "   me.lst_1.addItem ""Item three"""
-' frmVbComp.codeModule.InsertLines  5, "end sub"
-' 
-' 'add code for Comand Button
-' frmVbComp.codeModule.InsertLines  6, "Private sub btn_Click()"
-' frmVbComp.codeModule.InsertLines  7, "   If me.lst_1.text <>"""" Then"
-' frmVbComp.codeModule.InsertLines  8, "      msgbox (""You selected item: "" & me.lst_1.text )"
-' frmVbComp.codeModule.InsertLines  9, "   end If"
-' frmVbComp.codeModule.InsertLines 10, "end sub"
 
- 'Show the form
-  VBA.UserForms.add(frmVbComp.Name).Show
+ ' Show the form
+
+   VBA.UserForms.add(frmVbComp.Name).Show
   
   'Delete the form (Optional)
   'ThisWorkbook.VBProject.VBComponents.Remove frmVbComp
