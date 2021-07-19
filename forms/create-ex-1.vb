@@ -7,7 +7,7 @@ option explicit
 sub main() ' {
  
  ' 
- ' We don't wont no flashing screent while creating the form:
+ ' We don't wont no flashing screen while creating the form:
  '
   application.VBE.mainWindow.visible = false
   
