@@ -1,3 +1,11 @@
+'
+'  https://stackoverflow.com/questions/16174469/unprotect-vbproject-from-vb-code
+'
+
+Private Declare Function FindWindow Lib "user32" Alias "FindWindowA" _
+(ByVal lpClassName As String, ByVal lpWindowName As String) As Long
+
+Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExA" _
 (ByVal hWnd1 As Long, ByVal hWnd2 As Long, ByVal lpsz1 As String, _
 ByVal lpsz2 As String) As Long
 
